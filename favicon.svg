@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Jet, simplified for tiny sizes: sky-blue badge, dark head, sleepy eye, grey beak, teal headphones round her neck -->
+  <defs><clipPath id="c"><circle cx="32" cy="32" r="30"/></clipPath></defs>
+  <circle cx="32" cy="32" r="31" fill="#bfe1f3"/>
+  <g clip-path="url(#c)">
+  <path d="M10 58 C8 40 12 20 30 15 C44 11 52 22 50 34 C49 44 47 52 48 58 Z" fill="#3a3550" stroke="#2a1a0e" stroke-width="2.5" stroke-linejoin="round"/>
+  <ellipse cx="36" cy="28" rx="7.5" ry="6.5" fill="#fff"/>
+  <path d="M28.5 26 Q36 22.5 43.5 26" fill="none" stroke="#2a1a0e" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="38" cy="29.5" r="3" fill="#1b1622"/>
+  <path d="M42 33 L61 37 L43 42 Z" fill="#8f8fa0" stroke="#2a1a0e" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M14 46 Q30 54 46 46" fill="none" stroke="#3aa89a" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="44" cy="47" r="6" fill="#3aa89a" stroke="#2a1a0e" stroke-width="2"/>
+  <circle cx="44" cy="47" r="2.5" fill="#2b7d73"/>
+  </g>
+  <circle cx="32" cy="32" r="31" fill="none" stroke="#2a1a0e" stroke-width="2.5"/>
+</svg>
