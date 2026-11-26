@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fable Jam Nest · coming soon</title>
+<meta name="description" content="Fables in song and story, with Jet the DJ crow and Crumb the mouse. Stories, sing-alongs and remixes for kids aged 3 to 12. Coming soon.">
+<meta property="og:title" content="Fable Jam Nest · coming soon">
+<meta property="og:description" content="Fables in song and story, with Jet & Crumb. Coming soon.">
+<meta property="og:image" content="https://fablejam.com/img/og.jpg">
+<meta property="og:url" content="https://fablejam.com/nest/">
+<link rel="canonical" href="https://fablejam.com/nest/">
+<meta name="theme-color" content="#2b1f1e">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
+:root{--ink:#2b1f1e;--cream:#fbf3e4;--paper:#fffbf2;--teal:#3aa89a;--red:#d7352a;--gold:#f0b21c;--pink:#e8457a;--green:#6cbf3c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--ink);font-family:"Andika",system-ui,sans-serif}
+.hero{position:relative;aspect-ratio:16/9;max-height:78vh;width:100%;background:#2b1f1e url(/img/banner.webp) center/cover no-repeat;border-bottom:6px solid var(--ink)}
+.lights{position:absolute;left:0;right:0;top:0;height:70px;pointer-events:none}
+.lights i{position:absolute;top:22px;width:18px;height:18px;border-radius:50%;box-shadow:0 0 14px 4px currentColor;background:currentColor;opacity:.25;animation:twinkle 2.4s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.85}}
+main{max-width:980px;margin:0 auto;padding:36px 22px 30px;text-align:center}
+h1{margin:0 0 6px;font-size:clamp(40px,8vw,76px);line-height:1;color:var(--paper);-webkit-text-stroke:.12em var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 rgba(20,10,0,.25)}
+.soon{display:inline-block;margin:14px 0 8px;padding:8px 28px;border-radius:999px;background:var(--red);color:#fff;border:5px solid var(--ink);font-size:clamp(22px,4vw,34px);transform:rotate(-3deg);box-shadow:0 6px 0 rgba(20,10,0,.3)}
+.tag{font-size:clamp(19px,2.6vw,24px);line-height:1.4;max-width:720px;margin:14px auto}
+.stage{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:clamp(8px,4vw,48px);margin:26px auto 0;max-width:720px}
+.stage button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.stage img{display:block;height:auto;filter:drop-shadow(0 10px 6px rgba(40,22,10,.25));transform-origin:50% 100%}
+#jet img{width:clamp(130px,26vw,210px);animation:bop 1.07s ease-in-out infinite}
+#crumb img{width:clamp(100px,20vw,165px);animation:bop 1.07s ease-in-out infinite .53s}
+@keyframes bop{50%{transform:translateY(-6px) scaleY(.98)}}
+.hop img{animation:hop .45s ease-out !important}
+@keyframes hop{40%{transform:translateY(-38px) rotate(-4deg)}100%{transform:none}}
+.jar{position:relative;width:clamp(90px,16vw,120px);height:clamp(120px,21vw,160px);border:5px solid var(--ink);border-top-width:0;border-radius:0 0 30px 30px;background:rgba(255,255,255,.55);overflow:hidden}
+.jar::before{content:"";position:absolute;left:-10px;right:-10px;top:0;height:14px;background:#c58b52;border:5px solid var(--ink);border-radius:8px}
+.jar .p{position:absolute;width:20px;height:16px;border-radius:50%;border:3px solid var(--ink);transition:top .5s cubic-bezier(.5,0,.9,1)}
+.hint{font-size:18px;color:#6b5444;margin:14px 0 0}
+.peb{margin-top:16px;font:700 22px "Andika",sans-serif;padding:10px 26px;border-radius:999px;border:4px solid var(--ink);background:var(--teal);color:#fff;cursor:pointer;box-shadow:0 5px 0 var(--ink)}
+.peb:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.grown{max-width:720px;margin:44px auto 0;padding:22px 26px;background:var(--paper);border:4px solid var(--ink);border-radius:22px;text-align:left;font-size:18px;line-height:1.5}
+.grown h2{margin:0 0 6px;font-size:24px}
+footer{margin:34px 0 10px;font-size:15px;color:#6b5444}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<header class="hero" role="img" aria-label="The Jam Nest: Jet the crow and Crumb the mouse in their cosy tree hollow, with string lights and a record player">
+  <div class="lights" aria-hidden="true"></div>
+</header>
+<main>
+  <h1>Fable Jam Nest</h1>
+  <div class="soon">Coming soon!</div>
+  <p class="tag">Fables in song and story, with Jet the DJ crow and Crumb the little mouse. Stories, sing-alongs and remixes for kids aged 3 to 12.</p>
+
+  <div class="stage">
+    <button id="jet" aria-label="Jet: tap to hear her plink"><img src="/img/jet.webp" alt="Jet, a little crow with teal headphones round her neck"></button>
+    <div class="jar" aria-hidden="true"></div>
+    <button id="crumb" aria-label="Crumb: tap to hear him squeak"><img src="/img/crumb.webp" alt="Crumb, a little mouse with a green neckerchief"></button>
+  </div>
+  <button class="peb" id="drop">Drop the pebble</button>
+  <p class="hint">Tap Jet and Crumb, too.</p>
+
+  <section class="grown">
+    <h2>For grown-ups</h2>
+    Fable Jam Nest is a new channel of old fables, from Aesop and beyond, retold in our own words: every story says its lesson out loud, the peril stays gentle, and every video ends in a good place. Soon this site will have our videos, the old books our fables come from, how we make them, and a little play corner for small hands.
+  </section>
+  <footer>fablejam.com · no cookies, no tracking · © 2026 Fable Jam</footer>
+</main>
+<script>
+// the string lights twinkle across the top of the Jam Nest
+const L = document.querySelector(".lights"), C = ["#ffd257", "#e8457a", "#3aa89a", "#6cbf3c", "#ffd257", "#e8457a"];
+for (let i = 0; i < 14; i++) { const b = document.createElement("i"); b.style.left = (3 + i * 7) + "%"; b.style.top = (18 + 10 * Math.sin(i * 0.9)) + "px"; b.style.color = C[i % C.length]; b.style.animationDelay = (i * 0.37 % 2.4) + "s"; L.appendChild(b); }
+// sounds, made right here (no files): Jet's plink is a pebble on a record, Crumb's squeak a quick little chirp
+let ax;
+const ctx = () => ax || (ax = new (window.AudioContext || window.webkitAudioContext)());
+function tone(f, t0, d, v, f2) { const a = ctx(), o = a.createOscillator(), g = a.createGain(); o.frequency.setValueAtTime(f, a.currentTime + t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, a.currentTime + t0 + d * .6); g.gain.setValueAtTime(v, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + t0 + d); o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + d + .05); }
+const plink = () => { tone(1568, 0, .18, .18); tone(3136, 0, .12, .07); };
+const squeak = () => { tone(1300, 0, .09, .08, 2300); tone(1500, .12, .09, .07, 2600); };
+function hop(el) { el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop"); }
+// the Word Jar: each pebble drops in and settles on the pile (kept only on this page, nothing is saved)
+const jar = document.querySelector(".jar"), PC = ["#9aa3ad", "#c7b8a2", "#8a7f74", "#b9c3c9", "#a99a88"];
+let n = 0;
+function pebble() {
+  plink(); hop(document.getElementById("jet"));
+  const w = jar.clientWidth, h = jar.clientHeight, per = Math.max(3, Math.floor((w - 16) / 22)), row = Math.floor(n / per) % 6, col = n % per;
+  const p = document.createElement("span"); p.className = "p"; p.style.background = PC[n % PC.length];
+  p.style.left = (6 + col * ((w - 30) / Math.max(1, per - 1))) + "px"; p.style.top = "-20px"; jar.appendChild(p);
+  requestAnimationFrame(() => requestAnimationFrame(() => { p.style.top = (h - 24 - row * 15) + "px"; }));
+  n++; if (n % (per * 6) === 0) setTimeout(() => { jar.querySelectorAll(".p").forEach((q) => q.remove()); }, 700);
+}
+document.getElementById("drop").addEventListener("click", pebble);
+document.getElementById("jet").addEventListener("click", pebble);
+const crumb = document.getElementById("crumb"), ci = crumb.querySelector("img");
+crumb.addEventListener("click", () => { squeak(); hop(crumb); ci.src = "/img/crumb-cheer.webp"; clearTimeout(crumb._t); crumb._t = setTimeout(() => (ci.src = "/img/crumb.webp"), 900); });
+</script>
+</body>
+</html>
