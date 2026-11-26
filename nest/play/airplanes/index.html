@@ -69,6 +69,7 @@ body.land #ctrl{right:max(14px,env(safe-area-inset-right));top:50%;transform:tra
   <div id="stage"><div id="world">
     <img class="bg" id="bg" src="img/bg.webp" alt="" draggable="false">
     <div class="lay" id="L-back"></div>
+    <div class="lay" id="L-hang"></div>
     <div class="lay" id="L-crumb"></div>
     <div class="lay" id="L-plane"></div>
     <div class="lay" id="L-front"></div>
@@ -93,7 +94,9 @@ const Q = new URLSearchParams(location.search);       // only used for the ?demo
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const WW = 2752, WH = 1536, IMG = "img/";
 const CX = 1600, FEET = 578, GROUND = 1085, DIR = -1, DF = true, FS = 2.1;   // Crumb stands at the limb's outer end (bark top y 565-580 at x 1530-1670, near the trunk) facing LEFT; flights go left over the meadow           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
-const COLS = ["", "-y", "-b"];
+const COLS = ["", "-y", "-b", "-sr", "-sg", "-st"];       // red, yellow, blue, red/yellow swirl, green/yellow swirl, stars and stripes
+const HOLD = ["", "-y", "-b", "", "-y", "-b"];              // the colour of the plane in Crumb's paw: the swirls borrow the closest plain one (red, yellow, blue)
+const HANG_X = [87.5, 87.5, 87, 81.8, 72.5, 79.5];         // where the stem's tip is across each hanging sprite, in pixels
 const $ = (s) => document.querySelector(s);
 const world = $("#world"), body = document.body;
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -106,9 +109,10 @@ const L2 = (p, q, u) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u)];
 const arcUp = (p, q, u, h) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u) - h * 4 * u * (1 - u)];
 
 // ---------- assets (all from this site; preloaded so it works offline once loaded) ----------
-const names = ["crumb-catch", "crumb-go", "crumb-watch", "bucky-sit", "bucky-leap", "bucky-wave", "ej-sleep", "ej-lookup", "ej-cheer", "jet-up", "jet-oh", "jet-idle", "p-leaf1", "p-leaf2", "p-leaf3", "p-leaf4"];
+const names = ["crumb-catch", "crumb-go", "crumb-watch", "bucky-sit", "bucky-leap", "bucky-wave", "ej-sleep", "ej-lookup", "ej-cheer", "jet-up", "jet-oh", "jet-idle", "p-leaf1", "p-leaf2", "p-leaf3", "p-leaf4", "dot-idle", "dot-cheer"];
 for (const g of ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"]) for (const c of COLS) names.push("glider-" + g + c);
-for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle", "bucky-hold", "bucky-offer"]) for (const c of COLS) names.push(g + c);
+for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle", "bucky-hold", "bucky-offer"]) for (const c of HOLD.slice(0, 3)) names.push(g + c);
+for (const c of COLS) names.push("glider-hang" + c);
 const nat = {};
 const loadAll = Promise.all(names.map((n) => new Promise((res) => {
   const im = new Image(); im.onload = im.onerror = () => { nat[n] = { w: im.naturalWidth || 200, h: im.naturalHeight || 200 }; res(); }; im.src = IMG + n + ".webp";
@@ -137,7 +141,11 @@ function fxDiv(cls, x, y, w, h, layer) {
 
 // ---------- sound: everything made in code, soft, only after the first tap ----------
 let ax = null, master = null, muted = false;
+// a quiet loop of Mike's Thank You, Tree! instrumental (Suno, ours; 64 beats at 150 bpm, so it loops on the beat), from the first tap
+const MUSIC = new Audio("snd/tree-loop.mp3"); MUSIC.loop = true; MUSIC.preload = "auto"; MUSIC.volume = 0.22;
+function music() { if (muted) MUSIC.pause(); else if (MUSIC.paused) MUSIC.play().catch(() => {}); }
 function audioStart() {
+  music();
   if (!ax) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; ax = new C(); master = ax.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ax.destination); }
   if (ax.state === "suspended") ax.resume();
 }
@@ -169,6 +177,8 @@ const snd = {
   squeak() { tone(1300, 0, .09, .09, 2300); tone(1500, .12, .09, .08, 2600); },
   wow() { tone(659, 0, .14, .12, null, "triangle"); tone(880, .1, .14, .12, null, "triangle"); },
   fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, .32, .1, null, "triangle")); tone(1047, .5, .5, .1, null, "triangle"); tone(1319, .5, .5, .07, null, "triangle"); },
+  toot() { tone(587, 0, .12, .12, null, "triangle"); tone(587, .19, .17, .12, 659, "triangle"); },
+  tada() { tone(523, 0, .1, .12, null, "triangle"); tone(659, .09, .1, .12, null, "triangle"); tone(784, .18, .45, .13, null, "triangle"); tone(1047, .18, .45, .07, null, "sine"); },
   rustle() { noise(0, .3, .16, "highpass", 3000, 6000, .5); },
 };
 
@@ -204,7 +214,7 @@ function leafBurst(x, y, n, power = 1) {
 // ---------- the actors ----------
 const LB = $("#L-back"), LC = $("#L-crumb"), LP = $("#L-plane"), LF = $("#L-front"), bubble = $("#bubble");
 let crumb, planes = [], plane, colour = 0;
-const crumbNames = ["crumb-catch", "crumb-go", "crumb-watch"]; for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle"]) for (const c of COLS) crumbNames.push(g + c);
+const crumbNames = ["crumb-catch", "crumb-go", "crumb-watch"]; for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle"]) for (const c of HOLD.slice(0, 3)) crumbNames.push(g + c);
 const GL = ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"];
 let hopY = 0, rock = 0, crumbSquash = 1;
 function renderCrumb(now) {
@@ -214,7 +224,55 @@ function renderCrumb(now) {
 function buildActors() {
   crumb = actor(LC, crumbNames, 1, "b"); crumb.show("crumb-catch");
   for (const c of COLS) { const p = actor(LP, GL.map((g) => "glider-" + g + c), .6, "c"); p.hide(); planes.push(p); }
-  bubble.innerHTML = "";
+  bubble.innerHTML = ""; buildHang();
+}
+// ---------- the PLANE tree: a plane grows on the limb above Crumb, hangs by its stem, and is plucked on Ready ----------
+const LH = $("#L-hang");
+const HK = 1.1, HANG = [CX - 255, 100];          // sprite scale; where the stem's tip meets the limb (world px)
+let px = 0, py = 0, hang = null, nextColour = 0, hs = { st: "none", t: 0, clock: 0 }, drift = [];
+function buildHang() {
+  const box = document.createElement("div"); box.className = "act"; box.style.display = "none"; LH.appendChild(box);
+  const kids = COLS.map((c, i) => {
+    const n = "glider-hang" + c, im = document.createElement("img"); im.src = IMG + n + ".webp"; im.draggable = false; im.alt = "";
+    im.style.width = nat[n].w * HK + "px"; im.style.height = nat[n].h * HK + "px"; im.style.left = -HANG_X[i] * HK + "px"; im.style.top = "0"; im.style.filter = "drop-shadow(0 0 3px rgba(255,255,240,.9))";
+    box.appendChild(im); return im;
+  });
+  hang = { box, kids };
+}
+function hangGrow(loud) {
+  nextColour = Math.floor(Math.random() * COLS.length);
+  hang.kids.forEach((k, i) => { k.style.display = i === nextColour ? "block" : "none"; });
+  hang.box.style.display = "block"; hang.box.style.opacity = 1;
+  hs = { st: "grow", t: 0, clock: hs.clock }; px = py = 0;
+  if (loud) snd.boing(1.25);
+}
+function hangPluck() {
+  if (hs.st === "none" || !hang) return;
+  hs = { st: "pluck", t: 0, clock: hs.clock };
+  snd.pop();
+  const im = document.createElement("img"); im.src = IMG + "p-leaf" + pick([1, 2, 4]) + ".webp"; im.className = "fx"; im.draggable = false;
+  const w = nat["p-leaf1"].w * .6; im.style.width = w + "px"; im.style.left = -w / 2 + "px"; im.style.top = -nat["p-leaf1"].h * .3 + "px";
+  LF.appendChild(im); drift.push({ el: im, t: 0, life: REDUCE ? 1.4 : 2.6, x: HANG[0] + 20, y: HANG[1] + 30, ph: rnd(0, 6) });
+}
+function hangStep(dt) {
+  if (!hang) return;
+  hs.clock += dt; let sx = 1, sy = 1, rot = 0;
+  if (hs.st === "grow") {
+    hs.t += dt; const u = clamp(hs.t / (REDUCE ? .35 : .9));
+    sx = sy = REDUCE ? u : Math.max(.03, 1 - Math.pow(1 - u, 3) * Math.cos(u * Math.PI * 2.4));
+    if (u >= 1) hs.st = "idle";
+  } else if (hs.st === "idle") { if (!REDUCE) rot = 3.2 * Math.sin(hs.clock * 2.1); }
+  else if (hs.st === "pluck") {
+    hs.t += dt; const u = clamp(hs.t / .16); sy = 1 + .1 * u; sx = 1 - .1 * u; px = (CX - 110 - (HANG[0] + 9)) * eio(u); py = (269 - (HANG[1] + 181)) * eio(u); hang.box.style.opacity = 1 - u;
+    if (u >= 1) { hs.st = "none"; hang.box.style.display = "none"; }
+  }
+  if (hs.st !== "none") hang.box.style.transform = `translate(${HANG[0] + px}px,${HANG[1] + py}px) rotate(${rot.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`;
+  for (let i = drift.length - 1; i >= 0; i--) {
+    const d = drift[i]; d.t += dt; const u = d.t / d.life;
+    d.el.style.opacity = u > .7 ? clamp(1 - (u - .7) / .3) : 1;
+    d.el.style.transform = `translate(${(d.x + 55 * Math.sin(d.t * 2.2 + d.ph) + 20 * d.t).toFixed(1)}px,${(d.y + 330 * u * u + 90 * u).toFixed(1)}px) rotate(${(d.t * 70 + 40 * Math.sin(d.t * 2.2 + d.ph)).toFixed(1)}deg)`;
+    if (u >= 1) { d.el.remove(); drift.splice(i, 1); }
+  }
 }
 let pv = null, flipState = false;
 const NOSE = { level: 0, climb: 27, dive: -34 };
@@ -318,17 +376,17 @@ const LAND = {
     return t + 3.5;
   },
   bucky(t, E) {
-    const B = [330, GROUND + 25], bk = actor(LB, ["bucky-sit", "bucky-leap", "bucky-hold" + COLS[colour], "bucky-offer" + COLS[colour], "bucky-wave"], 1, "b"); temp.push(bk.box);
+    const B = [330, GROUND + 25], bk = actor(LB, ["bucky-sit", "bucky-leap", "bucky-hold" + HOLD[colour], "bucky-offer" + HOLD[colour], "bucky-wave"], 1, "b"); temp.push(bk.box);
     bk.show("bucky-sit"); bk.hide();
     const C = [350, 805];
     cue(t + .1, () => { snd.pop(); popIn(bk, B[0], B[1], tl.t, 1, .35); });
     fly(t, 1.6, (u) => arcUp(E, C, eio(u), 60));
     cue(t + 1.05, () => { bk.show("bucky-leap"); snd.boing(1.5); });
     tween(t + 1.05, .55, (u) => bk.set(B[0] + 20 * u, B[1] - 235 * Math.sin(u * Math.PI * .5) , 0, 1));
-    cue(t + 1.6, () => { plane.hide(); bk.show("bucky-hold" + COLS[colour]); snd.plink(); snd.wow(); });
+    cue(t + 1.6, () => { plane.hide(); bk.show("bucky-hold" + HOLD[colour]); snd.plink(); snd.wow(); });
     tween(t + 1.6, .4, (u) => bk.set(B[0] + 20, B[1] - 235 * (1 - eio(u)), 0, -1));
     tween(t + 2.0, 1.0, (u) => { const s = 1 + .04 * Math.sin(u * Math.PI * 4) * (1 - u); bk.set(B[0] + 20, B[1], 0, -1, 1, s); });
-    cue(t + 3.0, () => { bk.show("bucky-offer" + COLS[colour]); snd.squeak(); });
+    cue(t + 3.0, () => { bk.show("bucky-offer" + HOLD[colour]); snd.squeak(); });
     tween(t + 3.0, .5, (u) => bk.set(B[0] + 20 + 30 * eout(u), B[1], 0, 1));
     return t + 4.2;
   },
@@ -384,28 +442,67 @@ const LAND = {
     const P = [CX - 170, FEET - 175];
     fly(t, 1.7, (u) => { const m = [E[0] + 40, E[1] - 140], a = lerp(1 - u, 0, 0); return [(1 - u) * (1 - u) * E[0] + 2 * (1 - u) * u * m[0] + u * u * P[0], (1 - u) * (1 - u) * E[1] + 2 * (1 - u) * u * m[1] + u * u * P[1]]; });
     cue(t + 1.25, () => crumb.show("crumb-catch"));
-    cue(t + 1.7, () => { plane.hide(); snd.pop(); snd.plink(); crumb.show("crumb-ready" + COLS[colour]); hit(P[0], P[1], 1.2); });
+    cue(t + 1.7, () => { plane.hide(); snd.pop(); snd.plink(); crumb.show("crumb-ready" + HOLD[colour]); hit(P[0], P[1], 1.2); });
     tween(t + 1.7, .5, (u) => { crumbSquash = 1 - .06 * Math.sin(u * Math.PI); });
     cue(t + 2.3, () => { crumbSquash = 1; });
     return { t: t + 2.2, keepPose: true };
   },
 };
+function sparkle(x, y, n = 1) {
+  for (let i = 0; i < (REDUCE ? Math.ceil(n / 2) : n); i++) {
+    const d = document.createElement("div"), z = rnd(12, 24); d.className = "fx star"; d.style.width = d.style.height = z + "px"; d.style.left = d.style.top = -z / 2 + "px"; d.style.background = pick(["#ffe27a", "#fff6c9", "#ffffff"]);
+    spawn(d, x + rnd(-14, 14), y + rnd(-14, 14), rnd(-22, 22), rnd(-18, 22), 0, rnd(-60, 60), rnd(1.2, 1.7));
+  }
+}
+LAND.off = function (t, E) {
+  // "Off it goes!": wiggles its wings, a happy loop, then sails off over the treetops, getting smaller; Crumb waves bye-bye
+  const X = E[0], Y = E[1], R = 95, Dl = REDUCE ? 0 : 1.3, W = .9, t0 = t + W + Dl;
+  tween(t, W, (u) => { planeSet(X, Y, 15 * Math.sin(u * Math.PI * 7) * (1 - .25 * u), false, "level"); });
+  cue(t + .1, () => snd.plink());
+  if (!REDUCE) fly(t + W, Dl, (u) => { const f = eio(u) * 2 * Math.PI; return [X + DIR * (R * Math.sin(f) + 60 * u), Y - R * (1 - Math.cos(f))]; }, { rot: (u) => -360 * eio(u) });
+  const P0 = [X + DIR * (REDUCE ? 0 : 60), Y], P1 = [P0[0] + 330, Math.max(110, P0[1] - 230)], P2 = [1560, 700];   // it turns and sails off into the distance, over the far trees
+  cue(t0 - .05, () => { snd.toot(); snd.whoosh(); crumb.show("crumb-go"); });
+  tween(t0 - .05, 2.9, (u) => { rock = 7 * Math.sin(u * Math.PI * 11); hopY = 8 * Math.abs(Math.sin(u * Math.PI * 5.5)); });
+  const pos = (u) => [(1 - u) * (1 - u) * P0[0] + 2 * (1 - u) * u * P1[0] + u * u * P2[0], (1 - u) * (1 - u) * P0[1] + 2 * (1 - u) * u * P1[1] + u * u * P2[1]];
+  fly(t0, 2.6, pos, { sc: (u) => 1 - .92 * eio(u) });
+  let acc = 0; tween(t0, 2.4, (u, dt) => { acc += dt; if (acc > .06) { acc = 0; const p = pos(u); sparkle(p[0], p[1], 1); } });
+  cue(t0 + 2.65, () => plane.hide());
+  return t0 + 2.9;
+};
+LAND.surprise = function (t, E) {
+  // "Surprise pilot!": it lands softly on the grass and Dot climbs out of the cockpit, waves and bows
+  const G = [pick([700, 780, 860]), GROUND + 14], cy = G[1] - 44, dot = actor(LB, ["dot-idle", "dot-cheer"], .33, "b"); temp.push(dot.box); dot.show("dot-idle"); dot.hide();
+  const out = [G[0] - 40, cy - 34], gr = [G[0] - 165, G[1] + 12];
+  fly(t, 1.25, (u) => arcUp(E, [G[0], cy - 14], eio(u * .7 + .3 * u * u), 60));
+  cue(t + 1.25, () => { snd.plink(); snd.poof(); leafBurst(G[0], G[1], 4, .5); });
+  tween(t + 1.25, .6, (u) => { planeSet(G[0], cy + 5 * Math.sin(u * Math.PI * 3) * (1 - u), -3 * (1 - u), false, "level"); });
+  cue(t + 1.55, () => { snd.pop(); dot.vis(); });
+  tween(t + 1.55, .65, (u) => { const s = eout(u); dot.set(out[0], out[1], 0, 1, 1, .02 + .98 * s); });
+  cue(t + 2.25, () => { dot.show("dot-cheer"); snd.boing(1.8); });
+  tween(t + 2.25, .55, (u) => { const p = arcUp(out, gr, eio(u), 95); dot.set(p[0], p[1], 0, 1, 1, 1 - .1 * Math.sin(u * Math.PI * 2) * (u > .8 ? 1 : 0)); });
+  cue(t + 2.8, () => { snd.tada(); sparkle(gr[0], gr[1] - 130, 5); });
+  tween(t + 2.8, 1.1, (u) => dot.set(gr[0], gr[1], 7 * Math.sin(u * Math.PI * 6), 1));
+  tween(t + 3.95, 1.1, (u) => { const b = Math.sin(clamp(u * 1.6) * Math.PI); dot.set(gr[0], gr[1], 28 * b, 1); });
+  cue(t + 4.0, () => { dot.show("dot-idle"); snd.squeak(); });
+  return t + 5.2;
+};
 const LAND_NAMES = Object.keys(LAND);
 
 // ---------- Crumb's reaction + reset ----------
 function react(t, keepPose) {
-  const word = pick(["wow", "again"]);
+  const word = pick(["wow", "thanks"]);
   cue(t, () => {
     cam.follow = false;
     if (!keepPose) crumb.show("crumb-go");
-    snd.fanfare(); snd.wow(); if (word === "again") say("again");
+    snd.fanfare(); snd.wow(); if (word === "thanks") say("thankyou");
     bubble.innerHTML = (word === "wow"
       ? `<svg viewBox="0 0 40 40"><path d="M20 2l5 12 13 1-10 9 3 13-11-7-11 7 3-13L2 15l13-1z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg>Wow!`
-      : `<svg viewBox="0 0 40 40"><path d="M31 12A13 13 0 1 0 33 24" fill="none" stroke="#4fae3a" stroke-width="6" stroke-linecap="round"/><path d="M33 3v12H21z" fill="#4fae3a"/></svg>Again!`);
+      : `<svg viewBox="0 0 40 40"><path d="M20 3l4 10 10-3-5 9 9 5-10 2 1 10-9-6-9 6 1-10-10-2 9-5-5-9 10 3z" fill="#6cbf3c" stroke="#2b1f1e" stroke-width="2.5" stroke-linejoin="round"/><path d="M20 22v15" stroke="#2b1f1e" stroke-width="2.5"/></svg>Thank you, tree!`);
     bubble.style.display = "flex"; bubble.style.transform = `translate(${CX - 430}px,${FEET - 500}px) scale(.01)`;
   });
   tween(t, .4, (u) => { const s = eout(u); bubble.style.transform = `translate(${CX - 430}px,${FEET - 500}px) scale(${s})`; });
   tween(t, 1.1, (u) => { hopY = REDUCE ? 14 * Math.abs(Math.sin(u * Math.PI * 2)) : 46 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u * .4); rock = 0; if (u >= 1) hopY = 0; });
+  cue(t + .5, () => hangGrow(true));
   cue(t + 2.2, () => { for (const e of temp) e.style.transition = "opacity .35s", e.style.opacity = 0; plane.hide(); bubble.style.display = "none"; });
   cue(t + 2.6, reset);
 }
@@ -421,11 +518,12 @@ function startRound(o = {}) {
   tl.cues = []; tl.tweens = []; tl.t = 0; pv = null; flipState = DF; hopY = 0;
   planes.forEach((p) => p.hide()); plane = planes[colour]; plane.hide();
   const fl = o.fl || pick(REDUCE ? ["glide"] : Object.keys(FLIGHTS));
-  let ld = o.ld || pick(LAND_NAMES.filter((n) => n !== lastLand));
+  let ld = o.ld;
+  if (!ld) { const pool = LAND_NAMES.filter((n) => n !== lastLand), wt = pool.map((n) => n === "off" ? .5 : 1); let r = Math.random() * wt.reduce((a, b) => a + b, 0); ld = pool[0]; for (let i = 0; i < pool.length; i++) { r -= wt[i]; if (r <= 0) { ld = pool[i]; break; } } }
   lastLand = ld;
   const B = o.instant ? 0 : .55;     // the wiggle before the throw
   if (!o.instant) {
-    cue(0, () => { crumb.show("crumb-wiggle" + COLS[colour]); snd.go(); });
+    cue(0, () => { crumb.show("crumb-wiggle" + HOLD[colour]); snd.go(); });
     tween(0, B, (u) => { rock = -5 * Math.sin(u * Math.PI * 6) * (1 - u * .3); });
     cue(B - .02, () => { rock = 0; });
   }
@@ -447,15 +545,15 @@ let lastLand = "";
 let state = 0;            // 0 = Ready is next, 1 = Set, 2 = Go, 3 = flying
 const btns = [...document.querySelectorAll(".big")];
 function refresh() { btns.forEach((b, i) => { const on = i === state; b.disabled = !on; b.classList.toggle("lit", on); }); }
-// Crumb's own voice (Kokoro, songs/game-ready-set-go.md): "Ready!", "Set!", "Go!", "Again!" (Mike, 2026-11-26)
+// Crumb's own voice (Kokoro, songs/game-ready-set-go.md): "Ready!", "Set!", "Go!", and "Thank you, tree!" after a landing (Mike, 2026-11-26)
 const VOICE = {};
-for (const w of ["ready", "set", "go", "again"]) { const a = new Audio(`snd/${w}.mp3`); a.preload = "auto"; VOICE[w] = a; }
+for (const w of ["ready", "set", "go", "thankyou"]) { const a = new Audio(`snd/${w}.mp3`); a.preload = "auto"; VOICE[w] = a; }
 function say(w) { const a = VOICE[w]; if (!a || muted) return; try { a.currentTime = 0; a.volume = .9; a.play().catch(() => {}); } catch (e) {} }
 function press(i) {
   if (i !== state) return;
   audioStart();
-  if (i === 0) { colour = Math.floor(Math.random() * 3); say("ready"); snd.ready(); crumb.show("crumb-ready" + COLS[colour]); hopY = 0; bump(); state = 1; }
-  else if (i === 1) { say("set"); snd.set(); crumb.show("crumb-set" + COLS[colour]); bump(); state = 2; }
+  if (i === 0) { colour = nextColour; hangPluck(); say("ready"); snd.ready(); crumb.show("crumb-ready" + HOLD[colour]); hopY = 0; bump(); state = 1; }
+  else if (i === 1) { say("set"); snd.set(); crumb.show("crumb-set" + HOLD[colour]); bump(); state = 2; }
   else { say("go"); state = 3; startRound(); }
   refresh();
 }
@@ -469,7 +567,7 @@ btns.forEach((b, i) => {
 });
 for (const ev of ["pointerdown", "touchend", "click"]) document.addEventListener(ev, () => audioStart(), { passive: true });
 $("#mute").addEventListener("pointerdown", (e) => {
-  e.preventDefault(); audioStart(); muted = !muted; if (master) master.gain.value = muted ? 0 : .55;
+  e.preventDefault(); muted = !muted; audioStart(); if (master) master.gain.value = muted ? 0 : .55;
   $("#m-on").style.display = muted ? "none" : ""; $("#m-off").style.display = muted ? "" : "none"; $("#mute").setAttribute("aria-pressed", muted); $("#mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on");
 });
 $("#home").addEventListener("pointerdown", (e) => { e.preventDefault(); $("#curtain").style.opacity = 1; setTimeout(() => location.assign("/nest/play/"), 250); });
@@ -530,19 +628,28 @@ let last = 0, frozen = false;
 function frame(ms) {
   const now = ms / 1000, dt = Math.min(.05, last ? now - last : .016); last = now;
   for (let i = free.length - 1; i >= 0; i--) { const f = free[i]; f.t += dt; f.fn(clamp(f.t / f.d)); if (f.t >= f.d) { f.fn(1); hopY = 0; free.splice(i, 1); } }
-  step(dt); renderCrumb(now);
+  hangStep(dt); step(dt); renderCrumb(now);
   if (!frozen) requestAnimationFrame(frame);
 }
 
 loadAll.then(() => {
   buildActors(); layout(); refresh(); plane = planes[0];
+  hangGrow(false);                       // the first round starts with a plane already hanging there
   // screenshot helper: ?demo=ready|set|go  or  ?demo=1&fl=loop&ld=splash&c=y&t=3.2  (jumps straight to that moment; add &run=1 to keep playing)
   const d = Q.get("demo");
   if (d) {
-    colour = Math.max(0, COLS.indexOf(Q.get("c") ? "-" + Q.get("c") : ""));
+    colour = Math.max(0, COLS.indexOf(Q.get("c") ? "-" + Q.get("c") : "")); nextColour = colour;
     audioStart = () => {};
-    if (d === "ready") { crumb.show("crumb-ready" + COLS[colour]); state = 1; refresh(); }
-    else if (d === "set") { crumb.show("crumb-set" + COLS[colour]); state = 2; refresh(); }
+    if (d !== "hang" && d !== "pluck") { hs.st = "none"; hang.box.style.display = "none"; }
+    // ?demo=hang (idle, plane on the limb), ?demo=pluck&t=0.3 (Ready tapped, t seconds in), &c=y|b|sr|sg|st picks the livery
+    if (d === "hang" || d === "pluck") {
+      hangGrow(false); nextColour = colour; hang.kids.forEach((k, i) => { k.style.display = i === colour ? "block" : "none"; });
+      for (let i = 0; i < 120; i++) hangStep(1 / 60);
+      if (d === "pluck") { crumb.show("crumb-ready" + HOLD[colour]); hangPluck(); state = 1; refresh(); for (let i = 0; i < parseFloat(Q.get("t") || "0") * 60; i++) hangStep(1 / 60); }
+      if (!Q.get("run")) frozen = true;
+    }
+    else if (d === "ready") { crumb.show("crumb-ready" + HOLD[colour]); state = 1; refresh(); }
+    else if (d === "set") { crumb.show("crumb-set" + HOLD[colour]); state = 2; refresh(); }
     else {
       state = 3; refresh();
       startRound({ fl: Q.get("fl"), ld: Q.get("ld"), instant: true });
