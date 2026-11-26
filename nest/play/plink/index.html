@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Plink by Plink · Fable Jam Nest</title>
+<meta name="description" content="Gee-Gee's pitcher is nearly dry. Drop in the pebbles, one by one, and count them. A play-corner game with no ads, no sign-ups and nothing collected.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#d9c27a">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
+:root{--ink:#2b1f1e;--cream:#fbf3e4;--paper:#fffbf2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#d9c27a;color:var(--ink);font-family:"Andika",system-ui,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;background:#d9c27a}
+.fx{position:absolute;pointer-events:none;will-change:transform,opacity;left:0;top:0}
+.star{width:30px;height:30px;margin:-15px 0 0 -15px;background:#ffe27a;clip-path:polygon(50% 0,62% 36%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,38% 36%)}
+.drop{width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#7cc8f0;border:2px solid #2b1f1e}
+.peb{width:40px;height:31px;margin:-15px 0 0 -20px;border-radius:50%;border:3px solid #2b1f1e}
+#bubble{position:absolute;left:0;top:0;display:none;align-items:center;gap:10px;padding:8px 24px 8px 16px;background:#fff;border:6px solid var(--ink);border-radius:60px;font-size:38px;line-height:1;color:var(--ink);white-space:nowrap;pointer-events:none;z-index:4}
+#bubble::after{content:"";position:absolute;left:60%;bottom:-30px;border:20px solid transparent;border-top:28px solid var(--ink);border-bottom:0}
+#bubble svg{width:38px;height:38px;flex:none}
+body.land #gate{right:calc(max(10px,env(safe-area-inset-right)) + 152px);top:calc(max(10px,env(safe-area-inset-top)) + 9px)}
+body.portrait #home{right:auto;top:auto;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #mute{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #gate{top:auto;right:auto;left:50%;margin-left:-66px;bottom:max(16px,env(safe-area-inset-bottom))}
+body.portrait #panel{display:block}
+#panel{display:none;position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#e9d79a,#c9ae62);border-top:6px solid var(--ink)}
+.round{position:absolute;z-index:6;width:64px;height:64px;border-radius:50%;border:5px solid var(--ink);background:var(--paper);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 5px 0 var(--ink);touch-action:none}
+.round svg{width:60%;height:60%}
+.round:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+#home{right:calc(max(10px,env(safe-area-inset-right)) + 76px);top:max(10px,env(safe-area-inset-top))}
+#mute{right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top))}
+#gate{position:absolute;z-index:6;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 78px);width:132px;height:46px;border-radius:23px;border:3px solid var(--ink);background:rgba(255,251,242,.92);font:700 12px/1.1 "Andika",sans-serif;color:var(--ink);padding:0 8px;overflow:hidden;cursor:pointer;touch-action:none;text-align:center}
+#gate i{position:absolute;left:0;top:0;bottom:0;width:0;background:#9ad7cf}
+#gate span{position:relative}
+#curtain{position:absolute;inset:0;background:#fffbf2;opacity:0;pointer-events:none;transition:opacity .4s;z-index:20}
+#world{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0}
+#world>img.bg,#world>svg{position:absolute;display:block;pointer-events:none}
+#world>img.bg{left:0;top:0;width:1600px;height:900px}
+#rock{left:0;top:0;width:1600px;height:900px}
+#pitcher{left:877px;top:369px;width:240px;height:340px;transform-origin:0 0;transform:scale(.9);overflow:visible}
+#heap{position:absolute;left:690px;top:565px;width:160px;height:90px;transform-origin:50% 100%;pointer-events:none}
+.act{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
+.act img{position:absolute;max-width:none;pointer-events:none}
+.lay{position:absolute;left:0;top:0;width:0;height:0}
+#tray{position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:7px;padding:9px 14px;background:rgba(255,251,242,.88);border:4px solid var(--ink);border-radius:30px}
+#tray i{display:block;width:clamp(15px,5vw,26px);height:clamp(13px,4.2vw,21px);border-radius:50%;border:3px dashed rgba(43,31,30,.3);background:transparent}
+#tray i.on{border:3px solid var(--ink);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}  /* an empty slot is a faint dashed ring; a dropped pebble fills it solid */
+body.land #tray{top:14px;z-index:6}
+@media (max-width:1000px){body.land #tray{left:10px;transform:none}}
+#tray #num{min-width:1.5em;margin-left:4px;font-size:clamp(22px,6vw,34px);line-height:1;font-weight:700;color:var(--ink);text-align:center;align-self:center}
+#tray #num.pop{animation:numpop .45s ease-out}
+@keyframes numpop{0%{transform:scale(1.9)}60%{transform:scale(.92)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#tray #num.pop{animation:none}*{transition:none !important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><div id="world">
+    <img class="bg" src="img/bg.webp" alt="" draggable="false">
+    <svg id="rock" viewBox="0 0 1600 900" aria-hidden="true"><path d="M430 770C430 690 450 650 520 648L1080 648C1150 650 1170 690 1170 770L1170 900L430 900Z" fill="#b9a58a" stroke="#2b1f1e" stroke-width="7" stroke-linejoin="round"/><path d="M470 664C500 654 560 654 640 654L1060 654C1110 656 1140 668 1150 690" fill="none" stroke="#e4d4b4" stroke-width="12" stroke-linecap="round" opacity=".7"/><g fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" opacity=".55"><path d="M560 760L640 740L700 770"/><path d="M880 720L930 760L1010 745"/><path d="M1040 800L1100 782"/><path d="M500 830L580 815"/></g></svg>
+    <img id="heap" src="img/heap.svg" alt="" draggable="false">
+    <svg id="pitcher" viewBox="0 0 240 340" aria-hidden="true">
+      <defs><clipPath id="win"><path d="M72 30C72 66 52 96 46 152C41 212 60 288 90 306L150 306C180 288 199 212 194 152C188 96 168 66 168 30Z"/></clipPath></defs>
+      <path d="M62 22C62 60 40 90 34 150C28 215 50 300 84 318L156 318C190 300 212 215 206 150C200 90 178 60 178 22Z" fill="#c97b3f" stroke="#2b1f1e" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M72 30C72 66 52 96 46 152C41 212 60 288 90 306L150 306C180 288 199 212 194 152C188 96 168 66 168 30Z" fill="#f4ecd8"/>
+      <g clip-path="url(#win)">
+        <g id="water"><rect x="0" y="0" width="240" height="400" fill="#5fb8e8"/><path d="M-40 0Q-25-7-10 0T20 0T50 0T80 0T110 0T140 0T170 0T200 0T230 0T260 0L260 -12L-40 -12Z" transform="translate(0 0)" fill="#8ad4f4"/><path d="M-40 0Q-25-7-10 0T20 0T50 0T80 0T110 0T140 0T170 0T200 0T230 0T260 0" fill="none" stroke="#2b1f1e" stroke-width="3" opacity=".5"/></g>
+        <g id="slots"></g>
+        <g id="ripples"></g>
+        <rect x="58" y="40" width="9" height="150" rx="4.5" fill="#fff" opacity=".35" transform="rotate(4 62 100)"/>
+      </g>
+      <path d="M72 30C72 66 52 96 46 152C41 212 60 288 90 306L150 306C180 288 199 212 194 152C188 96 168 66 168 30Z" fill="none" stroke="#2b1f1e" stroke-width="4"/>
+      <path d="M44 150C80 164 160 164 196 150" fill="none" stroke="#8b4a1f" stroke-width="6" opacity=".55"/>
+      <ellipse cx="120" cy="22" rx="62" ry="12" fill="none" stroke="#2b1f1e" stroke-width="7"/>
+      <ellipse cx="120" cy="22" rx="62" ry="12" fill="none" stroke="#e9b27e" stroke-width="2.5"/>
+    </svg>
+    <div class="lay" id="L-gg"></div>
+    <div class="lay" id="L-fx"></div>
+    <div id="bubble"></div>
+  </div></div>
+  <div id="panel"><div id="tray" aria-hidden="true"></div></div>
+  <button class="round" id="home" aria-label="Back to the play corner"><svg viewBox="0 0 40 40"><path d="M5 20 20 6l15 14" fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v15h20V19" fill="#f0b21c" stroke="#2b1f1e" stroke-width="4" stroke-linejoin="round"/></svg></button>
+  <button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
+  <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to go back to the Fable Jam Nest page."><i></i><span>Grown-ups: press and hold to leave</span></button>
+  <div id="curtain"></div>
+</div>
+<script>
+(() => {
+"use strict";
+const Q = new URLSearchParams(location.search);       // only used for the ?demo= screenshot helper
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const WW = 1600, WH = 900;
+const $ = (s) => document.querySelector(s);
+const world = $("#world"), body = document.body, stage = $("#stage");
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const eio = (u) => u * u * (3 - 2 * u);
+const eout = (u) => 1 - (1 - u) * (1 - u);
+
+// ---------- sound: soft plinks made in code, only after the first tap ----------
+let ax = null, master = null, muted = false, quiet = false;
+function audioStart() {
+  if (!ax) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; ax = new C(); master = ax.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ax.destination); }
+  if (ax.state === "suspended") ax.resume();
+}
+function tone(f, t0, d, v, f2, type = "sine") {
+  if (!ax || quiet) return; const t = ax.currentTime + t0, o = ax.createOscillator(), g = ax.createGain(); o.type = type;
+  o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d * .8);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(master); o.start(t); o.stop(t + d + .05);
+}
+const SCALE = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568, 1760];   // a slightly higher plink each time
+const snd = {
+  plink(n) { const f = SCALE[clamp(n, 0, 9)]; tone(f, 0, .32, .17); tone(f * 2.01, 0, .16, .05); tone(f * .5, .02, .18, .05, f * .4); },
+  whoosh() { tone(300, 0, .3, .04, 700, "triangle"); },
+  sip() { tone(420, 0, .16, .09, 250); tone(300, .2, .14, .08, 480); tone(260, .4, .16, .07, 180); },
+  tada() { tone(523, 0, .12, .09, null, "triangle"); tone(659, .1, .12, .09, null, "triangle"); tone(784, .2, .45, .1, null, "triangle"); tone(1047, .2, .45, .05); },
+  pour() { tone(700, 0, .5, .03, 380, "triangle"); },
+};
+const S = (n, ...a) => { if (!quiet) snd[n](...a); };
+// Jet counts out loud; "jet-little" is recorded separately and fails silently if it isn't there yet.
+const VOICE = {};
+for (const w of [...Array.from({length: 10}, (_, i) => `jet-${i + 1}`), "jet-little"]) { const a = new Audio(`snd/${w}.mp3`); a.preload = "auto"; a.addEventListener("error", () => { a.dataset.bad = "1"; }); VOICE[w] = a; }
+function say(w) { const a = VOICE[w]; if (!a || muted || quiet || a.dataset.bad) return; try { a.currentTime = 0; a.volume = .9; a.play().catch(() => {}); } catch (e) {} }
+
+// ---------- the pitcher: where the pebbles rest, and the water ----------
+const PX = 877, PY = 369, PS = .9;
+const pw = (lx, ly) => [PX + PS * lx, PY + PS * ly];
+const SLOTS = [[100, 294], [124, 294], [148, 294], [88, 272], [112, 272], [136, 272], [160, 272], [100, 250], [124, 250], [148, 250]];
+const SVGNS = "http://www.w3.org/2000/svg", COLS = ["#b9a690", "#c9b79b", "#a39382", "#d6c6aa"];
+const slotsG = $("#slots"), slotEls = SLOTS.map(([x, y], i) => { const c = document.createElementNS(SVGNS, "ellipse"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("rx", 14); c.setAttribute("ry", 11); c.setAttribute("fill", COLS[i % 4]); c.setAttribute("stroke", "#2b1f1e"); c.setAttribute("stroke-width", 3.5); c.style.display = "none"; slotsG.appendChild(c); return c; });
+const waterEl = $("#water"), ripG = $("#ripples");
+const EMPTY = 300, FULL = 46, STEP = (EMPTY - FULL) / 10;
+let wy = EMPTY, wTarget = EMPTY, wSpeed = 0, wT = 0;
+function drawWater() { const dx = REDUCE ? 0 : Math.sin(wT * 2.2) * 14; waterEl.setAttribute("transform", `translate(${dx.toFixed(1)} ${wy.toFixed(1)})`); }
+
+// ---------- scene ----------
+const LG = $("#L-gg"), LF = $("#L-fx"), heap = $("#heap"), bubble = $("#bubble");
+const gg = { x: 622, y: 568, rot: 0, sc: 1, hop: 0, fly: false, el: document.createElement("div") };
+gg.el.className = "act"; LG.appendChild(gg.el);
+const mkImg = (src, w, h) => { const im = document.createElement("img"); im.src = "img/" + src; im.alt = ""; im.draggable = false; im.style.cssText = `width:${w}px;height:${h}px;left:${-w / 2}px;top:${-h / 2}px`; gg.el.appendChild(im); return im; };
+const ggIdle = mkImg("gg-idle.webp", 190, 175), ggFly = mkImg("gg-fly.webp", 250, 174); ggFly.style.display = "none";
+const HEAP_XY = [770, 585], MOUTH = [985, 392];
+
+let clock = 0, count = 0, busy = false, finale = false, idleT = 0, parts = [], flights = [], sched = [], rips = [];
+const later = (t, fn) => sched.push({ t: clock + t, fn });
+
+function sparkle(x, y, n = 8, spread = 120) {
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("div"); d.className = "fx star"; LF.appendChild(d);
+    const a = rnd(0, 6.28), v = rnd(.4, 1) * spread;
+    parts.push({ el: d, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, g: 120, r: rnd(0, 90), vr: rnd(-120, 120), age: 0, life: rnd(.8, 1.3), s: rnd(.7, 1.4) });
+  }
+}
+function splash(x, y, n = 6) {
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("div"); d.className = "fx drop"; LF.appendChild(d);
+    parts.push({ el: d, x: x + rnd(-14, 14), y, vx: rnd(-60, 60), vy: rnd(-230, -130), g: 520, r: 0, vr: 0, age: 0, life: rnd(.55, .8), s: 1 });
+  }
+}
+function stepParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.age += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+    const k = p.age / p.life, o = k > .6 ? 1 - (k - .6) / .4 : Math.min(1, p.age * 5);
+    p.el.style.opacity = clamp(o); p.el.style.transform = `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${p.r.toFixed(1)}deg) scale(${p.s})`;
+    if (p.age >= p.life) { p.el.remove(); parts.splice(i, 1); }
+  }
+}
+function ripple() {
+  const e = document.createElementNS(SVGNS, "ellipse"); e.setAttribute("cx", 120); e.setAttribute("fill", "none"); e.setAttribute("stroke", "#fff"); e.setAttribute("stroke-width", 4); ripG.appendChild(e); rips.push({ e, age: 0 });
+}
+function stepRips(dt) {
+  for (let i = rips.length - 1; i >= 0; i--) {
+    const r = rips[i]; r.age += dt; const u = r.age / 1.1;
+    r.e.setAttribute("cy", (wy + 2).toFixed(1)); r.e.setAttribute("rx", (8 + 46 * eout(u)).toFixed(1)); r.e.setAttribute("ry", (2 + 9 * eout(u)).toFixed(1)); r.e.setAttribute("opacity", (.9 * (1 - u)).toFixed(2));
+    if (u >= 1) { r.e.remove(); rips.splice(i, 1); }
+  }
+}
+
+// ---------- a pebble in flight: from the heap, in an arc to the pitcher's mouth, then down to its place ----------
+function mkPeb(i, x, y) { const d = document.createElement("div"); d.className = "fx peb"; d.style.background = COLS[i % 4]; d.style.transform = `translate(${x}px,${y}px)`; LF.appendChild(d); return d; }
+function throwPebble() {
+  busy = true; idleT = 0; const n = count, [sx, sy] = slotWorld(n);
+  gg.hop = .35; S("whoosh");
+  const el = mkPeb(n, HEAP_XY[0], HEAP_XY[1]);
+  flights.push({ el, t: 0, kind: "in", n, x0: HEAP_XY[0], y0: HEAP_XY[1], sx, sy });
+}
+const slotWorld = (n) => pw(SLOTS[n][0], SLOTS[n][1]);
+function landed(f) {   // the pebble reaches its place in the water: plink, splash, ripple, the water rises a step, Jet counts
+  f.el.remove(); slotEls[f.n].style.display = ""; count = f.n + 1;
+  S("plink", f.n); splash(MOUTH[0], wy * PS + PY, 5); ripple(); sparkle(f.sx, f.sy - 30, 2, 50);
+  wTarget = EMPTY - STEP * count; wSpeed = 55; trayUpdate(); say(`jet-${count}`);
+  if (count >= 10) { finale = true; later(1.2, startFinale); } else later(.55, () => { busy = false; });
+}
+function stepFlights(dt) {
+  for (let i = flights.length - 1; i >= 0; i--) {
+    const f = flights[i]; f.t += dt;
+    if (f.kind === "in") {
+      const A = .8, B = .34;
+      if (f.t < A) { const u = eio(f.t / A); f.el.style.transform = `translate(${lerp(f.x0, MOUTH[0], u).toFixed(1)}px,${(lerp(f.y0, MOUTH[1], u) - 230 * 4 * u * (1 - u)).toFixed(1)}px) rotate(${(u * 300).toFixed(0)}deg)`; }
+      else if (f.t < A + B) { const u = (f.t - A) / B; f.el.style.transform = `translate(${lerp(MOUTH[0], f.sx, u).toFixed(1)}px,${lerp(MOUTH[1], f.sy, u * u).toFixed(1)}px)`; }
+      else { flights.splice(i, 1); landed(f); }
+    } else {   // "home": a pebble tumbles back to the heap
+      if (f.t < 0) continue;
+      const D = 1.0, u = clamp(f.t / D); f.el.style.opacity = 1;
+      f.el.style.transform = `translate(${lerp(f.x0, f.x1, eio(u)).toFixed(1)}px,${(lerp(f.y0, f.y1, eio(u)) - 120 * 4 * u * (1 - u)).toFixed(1)}px) rotate(${(u * -420).toFixed(0)}deg)`;
+      if (u >= 1) { f.el.remove(); flights.splice(i, 1); }
+    }
+  }
+}
+
+// ---------- Gee-Gee ----------
+let gTarget = null;   // {x, y, rot} she glides to
+function drawGG(dt) {
+  if (gTarget) { const k = 1 - Math.exp(-dt * 3.2); gg.x = lerp(gg.x, gTarget.x, k); gg.y = lerp(gg.y, gTarget.y, k); gg.rot = lerp(gg.rot, gTarget.rot, k); }
+  gg.hop = Math.max(0, gg.hop - dt);
+  const bob = REDUCE ? 0 : (gg.fly ? Math.sin(clock * 5) * 8 : Math.sin(clock * 2.2) * 2.5);
+  const hop = REDUCE ? 0 : -Math.sin((gg.hop / .35) * Math.PI) * 14 * (gg.hop > 0 ? 1 : 0);
+  const flap = gg.fly && !REDUCE ? 1 + Math.sin(clock * 9) * .05 : 1;
+  gg.el.style.transform = `translate(${gg.x.toFixed(1)}px,${(gg.y + bob + hop).toFixed(1)}px) rotate(${gg.rot.toFixed(1)}deg) scale(1,${flap.toFixed(3)})`;
+}
+function setFly(on) { gg.fly = on; ggIdle.style.display = on ? "none" : ""; ggFly.style.display = on ? "" : "none"; }
+
+// ---------- the finale at ten: the water reaches the top, Gee-Gee flies up and drinks, "Little by little!", then it settles and starts over ----------
+function startFinale() {
+  S("tada"); sparkle(985, 330, 10, 150);
+  setFly(true); gTarget = { x: 905, y: 352, rot: 24 };
+  later(1.6, () => { S("sip"); sparkle(985, 380, 5, 70); });
+  later(2.2, () => { showBubble(); say("jet-little"); });
+  later(2.7, () => { S("sip"); sparkle(960, 360, 6, 90); });
+  later(3.6, () => { S("sip"); sparkle(1000, 350, 6, 90); });
+  later(5.2, () => { hideBubble(); gTarget = { x: 622, y: 568, rot: 0 }; });
+  later(6.4, () => { setFly(false); gg.x = 622; gg.y = 568; gg.rot = 0; gTarget = null; S("pour"); wTarget = EMPTY; wSpeed = 62; tumbleHome(); });
+  later(10.8, () => { count = 0; finale = false; busy = false; trayUpdate(); });
+}
+function tumbleHome() {
+  slotEls.forEach((s, i) => { later(i * .16, () => { if (!quiet && i % 3 === 0) snd.plink(Math.max(0, 9 - i)); s.style.display = "none"; const [x, y] = slotWorld(i); const el = mkPeb(i, x, y); flights.push({ el, kind: "home", t: 0, x0: x, y0: y, x1: HEAP_XY[0] + rnd(-40, 40), y1: HEAP_XY[1] + rnd(10, 40) }); }); });
+  later(2.0, () => { pending = 0; });
+  trayClear();
+}
+let pending = 0;
+function showBubble() {
+  bubble.style.display = "flex";
+  bubble.innerHTML = `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="16" ry="12" fill="#c9b79b" stroke="#2b1f1e" stroke-width="3"/><ellipse cx="15" cy="18" rx="6" ry="2.5" fill="#fff" opacity=".6"/></svg>Little by little!`;
+  const bw = bubble.offsetWidth || 520; bubble.style.transform = `translate(${700 - bw / 2}px,420px)`; bubble.dataset.born = clock;
+}
+function hideBubble() { bubble.style.display = "none"; }
+
+// ---------- counter tray ----------
+const tray = $("#tray");
+for (let i = 0; i < 10; i++) tray.appendChild(document.createElement("i"));
+const numEl = document.createElement("b"); numEl.id = "num"; tray.appendChild(numEl);
+function trayUpdate() { [...tray.querySelectorAll("i")].forEach((d, i) => { d.style.background = i < count ? COLS[i % 4] : ""; d.classList.toggle("on", i < count); }); numEl.textContent = count ? String(count) : ""; numEl.classList.remove("pop"); void numEl.offsetWidth; if (count) numEl.classList.add("pop"); }
+function trayClear() { [...tray.querySelectorAll("i")].forEach((d) => { d.style.background = ""; }); numEl.textContent = ""; }
+
+// ---------- input: tap anywhere; taps while a pebble is in the air (or the finale plays) are ignored ----------
+stage.addEventListener("pointerdown", (e) => { e.preventDefault(); audioStart(); if (!busy && !finale) throwPebble(); });
+for (const ev of ["pointerdown", "touchend", "click"]) document.addEventListener(ev, () => audioStart(), { passive: true });
+$("#mute").addEventListener("pointerdown", (e) => {
+  e.preventDefault(); muted = !muted; audioStart(); if (master) master.gain.value = muted ? 0 : .55; if (muted) for (const k in VOICE) VOICE[k].pause();
+  $("#m-on").style.display = muted ? "none" : ""; $("#m-off").style.display = muted ? "" : "none"; $("#mute").setAttribute("aria-pressed", muted); $("#mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on");
+});
+$("#home").addEventListener("pointerdown", (e) => { e.preventDefault(); $("#curtain").style.opacity = 1; setTimeout(() => location.assign("/nest/play/"), 250); });
+// the grown-up gate: press and hold three seconds (goes to the grown-ups' page; nothing else leaves the play corner)
+(() => {
+  const g = $("#gate"), bar = g.querySelector("i"); let t0 = 0, raf = 0;
+  const tick = () => { const u = (performance.now() - t0) / 3000; bar.style.width = clamp(u) * 100 + "%"; if (u >= 1) { t0 = 0; location.assign("/nest/"); return; } raf = requestAnimationFrame(tick); };
+  const stop = () => { cancelAnimationFrame(raf); t0 = 0; bar.style.width = "0"; };
+  g.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); try { g.setPointerCapture(e.pointerId); } catch (_) {} t0 = performance.now(); tick(); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) g.addEventListener(ev, stop);
+  g.addEventListener("contextmenu", (e) => e.preventDefault());
+  g.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.shiftKey) location.assign("/nest/"); });
+})();
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+// ---------- camera: cover the picture on a wide screen; on a phone held upright, the picture on top and the tray below ----------
+let cam = { s: 1, x0: 0, y0: 0 };
+function layout() {
+  const vw = innerWidth, vh = innerHeight, land = vw / vh >= 1.15;
+  body.classList.toggle("land", land); body.classList.toggle("portrait", !land);
+  (land ? stage.parentNode : $("#panel")).appendChild(tray);
+  const panel = $("#panel"); let s, x0, y0, sw = vw, sh = vh;
+  if (land) { s = Math.max(vw / WW, vh / WH) * 1.3; x0 = 810 - vw / (2 * s); y0 = 460 - vh / (2 * s); stage.style.height = "100%"; panel.style.display = "none"; }
+  else { sh = Math.round(vh * .7); s = Math.max(sh / WH, vw / WW); x0 = 800 - vw / (2 * s); y0 = (WH - sh / s) * .5; stage.style.height = sh + "px"; panel.style.display = "block"; panel.style.top = sh + "px"; }
+  x0 = clamp(x0, 0, WW - sw / s); y0 = clamp(y0, 0, WH - sh / s);
+  cam = { s, x0, y0 }; world.style.transform = `scale(${s}) translate(${-x0}px,${-y0}px)`;
+}
+addEventListener("resize", layout); addEventListener("orientationchange", layout);
+
+// ---------- frame loop ----------
+function step(dt) {
+  clock += dt; wT += dt;
+  for (let i = sched.length - 1; i >= 0; i--) if (sched[i].t <= clock) { const s = sched.splice(i, 1)[0]; s.fn(); }
+  const d = wTarget - wy; if (Math.abs(d) > .01) { const m = (d < 0 ? wSpeed * 1.4 : wSpeed) * dt * (Math.abs(d) < 10 ? .5 + Math.abs(d) / 20 : 1); wy += Math.sign(d) * Math.min(Math.abs(d), Math.max(m, .2)); }
+  drawWater();
+  if (!busy && !finale && !REDUCE) { idleT += dt; const h = idleT > 4 ? Math.abs(Math.sin((idleT - 4) * 3)) * Math.max(0, 1 - (idleT - 4) / 3) : 0; heap.style.transform = `scale(${1 + .07 * h},${1 + .09 * h})`; }
+  stepFlights(dt); drawGG(dt); stepParts(dt); stepRips(dt);
+}
+let last = 0, frozen = false;
+function frame(ms) { const now = ms / 1000, dt = Math.min(.05, last ? now - last : .016); last = now; step(dt); if (!frozen) requestAnimationFrame(frame); }
+
+const pre = Promise.all(["bg.webp", "gg-idle.webp", "gg-fly.webp", "heap.svg"].map((n) => new Promise((r) => { const im = new Image(); im.onload = im.onerror = r; im.src = "img/" + n; })));
+pre.then(() => {
+  layout(); drawWater(); trayUpdate(); trayClear();
+  const d = Q.get("demo");
+  if (d) {   // screenshot helper: ?demo=idle | drop | five | drink  &t=seconds  (add &run=1 to keep playing)
+    quiet = true; audioStart = () => {};
+    const T = Math.min(30, Math.max(0, parseFloat(Q.get("t")) || 0)), tick = (sec) => { for (let i = 0; i < sec * 60; i++) step(1 / 60); };
+    const fill = (n) => { for (let i = 0; i < n; i++) { throwPebble(); tick(2); } };
+    if (d === "drop") { throwPebble(); tick(.55 + T); }
+    else if (d === "five") { fill(5); tick(T); }
+    else if (d === "drink") { fill(10); tick(1.2 + 3 + T); }
+    else tick(T);
+    if (!Q.get("run")) frozen = true;
+  }
+  requestAnimationFrame(frame);
+  document.documentElement.dataset.ready = "1";
+});
+})();
+</script>
+</body>
+</html>

@@ -50,6 +50,11 @@ img.it{position:absolute;max-width:none;pointer-events:none;will-change:transfor
 #basket{position:absolute;left:875px;top:258px;width:170px;height:96px;pointer-events:none}
 #tray{position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:7px;padding:9px 14px;background:rgba(255,251,242,.85);border:4px solid var(--ink);border-radius:30px}
 #tray i{display:block;width:clamp(15px,5vw,26px);height:clamp(15px,5vw,26px);border-radius:50%;border:3px solid var(--ink);background:rgba(43,31,30,.12)}
+body.land #tray{top:14px;z-index:6}
+#tray #num{min-width:1.5em;margin-left:4px;font-size:clamp(22px,6vw,34px);line-height:1;font-weight:700;color:var(--ink);text-align:center;align-self:center}
+#tray #num.pop{animation:numpop .45s ease-out}
+@keyframes numpop{0%{transform:scale(1.9)}60%{transform:scale(.92)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){#tray #num.pop{animation:none}}
 #tray i.r{background:#e0453a}#tray i.b{background:#4a7fd8}#tray i.l{background:#6cbf3c;border-radius:50% 0 50% 0}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 
@@ -121,7 +126,7 @@ const snd = {
 };
 // Jet's voice (recorded for this game). A missing file just stays quiet.
 const VOICE = {};
-for (const w of ["jet-yummy", "jet-thankyou"]) { const a = new Audio(`snd/${w}.mp3`); a.preload = "auto"; a.addEventListener("error", () => { a.dataset.bad = "1"; }); VOICE[w] = a; }
+for (const w of ["jet-yummy", "jet-thankyou", ...Array.from({length: 10}, (_, i) => `jet-${i + 1}`)]) { const a = new Audio(`snd/${w}.mp3`); a.preload = "auto"; a.addEventListener("error", () => { a.dataset.bad = "1"; }); VOICE[w] = a; }
 function say(w) { const a = VOICE[w]; if (!a || muted || a.dataset.bad) return; try { a.currentTime = 0; a.volume = .9; a.play().catch(() => {}); } catch (e) {} }
 let quiet = false;   // demo screenshots make no sound
 const S = (n, ...a) => { if (!quiet) snd[n](...a); };
@@ -140,6 +145,7 @@ const jet = { x: 800, y: 520, tx: 800, ty: 520, flip: 1, vx: 0, el: null, a: nul
 let happyUntil = 0;
 function jetPose() { const h = clock < happyUntil; jet.a.style.display = h ? "none" : "block"; jet.b.style.display = h ? "block" : "none"; }
 
+let celebSoon = false; // Jet says "Ten!" before the party starts (Mike, 2026-11-26: count them out loud)
 let clock = 0, items = [], pile = [], count = 0, parts = [], spawnT = 1.5, celeb = null, treeAmp = 0, treeT = 0, sprite = null;
 let view = { x0: 400, x1: 1200, y0: 100, y1: 800 };
 const branchY = (x) => x < 700 ? 395 : 375;
@@ -213,9 +219,9 @@ function stepItems(dt) {
     else if (it.st === "hop") {
       const u = clamp(it.t / .75), e = eio(u);
       it.x = lerp(it.x0, it.px, e); it.y = lerp(it.y0, it.py, e) - 150 * 4 * u * (1 - u); it.rot = it.rot * (1 - u); it.sc = lerp(1, .8, u); it.sy = it.sc;
-      if (u >= 1) { items.splice(i, 1); it.x = it.px; it.y = it.py; it.rot = 0; pile.push(it); count = pile.length; S("bloop"); trayUpdate(); if (count >= 10) startCeleb(); }
+      if (u >= 1) { items.splice(i, 1); it.x = it.px; it.y = it.py; it.rot = 0; pile.push(it); count = pile.length; S("bloop"); trayUpdate(); say(`jet-${Math.min(count, 10)}`); if (count >= 10 && !celebSoon) { celebSoon = true; setTimeout(() => { celebSoon = false; startCeleb(); }, 800); } }
     }
-    if (it.st !== "hop" && !celeb && it.st !== "grow" && jetNear(it)) caught(it);
+    if (it.st !== "hop" && !celeb && !celebSoon && it.st !== "grow" && jetNear(it)) caught(it);
     draw(it);
   }
   for (const p of pile) draw(p);
@@ -295,7 +301,8 @@ function stepTree(dt) {
 // ---------- the little tray under the picture on a phone held upright ----------
 const tray = $("#tray");
 for (let i = 0; i < 10; i++) { const d = document.createElement("i"); tray.appendChild(d); }
-function trayUpdate() { [...tray.children].forEach((d, i) => { const p = pile[i]; d.className = p ? (p.kind === "r" ? "r" : p.kind === "b" ? "b" : "l") : ""; }); }
+const numEl = document.createElement("b"); numEl.id = "num"; tray.appendChild(numEl);
+function trayUpdate() { [...tray.querySelectorAll("i")].forEach((d, i) => { const p = pile[i]; d.className = p ? (p.kind === "r" ? "r" : p.kind === "b" ? "b" : "l") : ""; }); numEl.textContent = count ? String(Math.min(count, 10)) : ""; numEl.classList.remove("pop"); void numEl.offsetWidth; if (count) numEl.classList.add("pop"); }
 
 // ---------- input: drag Jet, or tap where she should fly ----------
 const stage = $("#stage");
@@ -329,6 +336,7 @@ let cam = { s: 1, x0: 0, y0: 0 };
 function layout() {
   const vw = innerWidth, vh = innerHeight, land = vw / vh >= 1.15;
   body.classList.toggle("land", land); body.classList.toggle("portrait", !land);
+  (land ? $("#stage").parentNode : $("#panel")).appendChild($("#tray")); // the counter sits on the picture when wide, in the panel when upright
   const panel = $("#panel"); let s, x0, y0, sw = vw, sh = vh;
   if (land) { s = Math.max(vw / WW, vh / WH); x0 = (WW - vw / s) * .55; y0 = (WH - vh / s) * .5; stage.style.height = "100%"; panel.style.display = "none"; }
   else { sh = Math.round(vh * .7); s = Math.max(sh / WH, vw / WW); x0 = 800 - vw / (2 * s); y0 = (WH - sh / s) * .5; stage.style.height = sh + "px"; panel.style.display = "block"; panel.style.top = sh + "px"; }

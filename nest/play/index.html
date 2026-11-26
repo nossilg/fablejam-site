@@ -27,7 +27,7 @@ h1{margin:0;font-size:clamp(34px,8vmin,70px);line-height:1;color:var(--paper);-w
 .go .c{width:54%;left:14%;bottom:8%}
 .go .p{width:44%;right:8%;top:20%;transform:rotate(-12deg)}
 .go .w{position:absolute;left:0;right:0;top:8%;font-size:clamp(16px,4.4vmin,26px);padding:0 14%}
-body.portrait .go,.go{width:min(44vmin,300px);height:min(44vmin,300px)}
+body.portrait .go,.go{width:min(44vmin,300px,21vw);height:min(44vmin,300px,21vw)}
 .sb{background:#4a2c18}
 .sb .m{width:46%;left:27%;top:8%}
 .sb .j{width:34%;left:14%;bottom:7%}
@@ -37,6 +37,9 @@ body.portrait .go,.go{width:min(44vmin,300px);height:min(44vmin,300px)}
 .bs .j{width:40%;left:30%;bottom:6%}
 .bs .r{width:20%;left:24%;top:12%}
 .bs .u{width:20%;right:22%;top:20%}
+.pl{background:#e9d79a;animation-delay:-1.8s}
+.pl .g{width:36%;left:10%;bottom:8%}
+.pl .h{width:36%;right:10%;bottom:8%}
 @keyframes bob{50%{transform:translateY(-6px)}}
 #gate{position:fixed;z-index:6;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));width:150px;height:48px;border-radius:24px;border:3px solid var(--ink);background:rgba(255,251,242,.94);font:700 12px/1.1 "Andika",sans-serif;color:var(--ink);padding:0 10px;overflow:hidden;cursor:pointer;touch-action:none;text-align:center}
 #gate i{position:absolute;left:0;top:0;bottom:0;width:0;background:#9ad7cf}
@@ -68,6 +71,10 @@ body.portrait .go,.go{width:min(44vmin,300px);height:min(44vmin,300px)}
     <img class="r" src="berries/img/berry-red.svg" alt="" draggable="false">
     <img class="u" src="berries/img/berry-blue.svg" alt="" draggable="false">
     <img class="j" src="berries/img/jet-up.webp" alt="" draggable="false">
+  </a>
+  <a class="go pl" href="/nest/play/plink/" aria-label="Plink by Plink">
+    <img class="g" src="plink/img/gg-idle.webp" alt="" draggable="false">
+    <img class="h" src="plink/img/pitcher-icon.svg" alt="" draggable="false">
   </a>
 
   </div>
