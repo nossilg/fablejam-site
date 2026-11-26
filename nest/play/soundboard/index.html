@@ -131,6 +131,7 @@ body.land #gate{top:auto;right:max(10px,env(safe-area-inset-right));bottom:max(1
     <button class="round" id="stop" aria-label="Stop the music"><svg viewBox="0 0 40 40"><rect x="9" y="9" width="22" height="22" rx="4" fill="#d7352a" stroke="#2b1f1e" stroke-width="3"/></svg></button>
     <button class="round" id="next" aria-label="Next song"><svg viewBox="0 0 40 40"><path d="M8 8l16 12L8 32z" fill="#2b1f1e"/><rect x="27" y="8" width="5" height="24" rx="2" fill="#2b1f1e"/></svg></button>
     <button class="round" id="loop" aria-label="Play them all" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M9 17v-2a6 6 0 0 1 6-6h14m0 0-4-4m4 4-4 4M31 23v2a6 6 0 0 1-6 6H11m0 0 4 4m-4-4 4-4" fill="none" stroke="#2b1f1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="round" id="shuffle" aria-label="Shuffle the songs" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 13h6c6 0 10 14 16 14h6M6 27h6c2.4 0 4.4-2.2 6.2-5M22 18c1.8-2.8 3.8-5 6-5h6m0 0-4-4m4 4-4 4M34 27l-4-4m4 4-4 4" fill="none" stroke="#2b1f1e" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
   <div id="shelf"><button class="round x" id="shut" aria-label="Close the crate"><svg viewBox="0 0 40 40"><path d="M10 10l20 20M30 10 10 30" stroke="#2b1f1e" stroke-width="6" stroke-linecap="round"/></svg></button>
     <button class="round mn" id="moonbtn" aria-label="Bedtime songs" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M27 6a15 15 0 1 0 8 22A12 12 0 0 1 27 6z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg></button>
@@ -302,6 +303,7 @@ CHORUS.addEventListener("ended", () => { beatUntil = clock; });
 // ---------- the record crate: songs, the turntable, the window's now-playing ----------
 const SONGS = (window.CRATE || []).filter((x) => x && x.file);
 const MUSIC = new Audio(); MUSIC.preload = "none";
+let shuffle = false, bag = []; // shuffle: every song once, in a random order, then a new order (Mike, 2026-11-26)
 let playing = false, bedMode = false, cur = -1, loopAll = false, demoT = null, shelfBuilt = false, lastLine = -2, lineSpans = [];
 const nowEl = $("#np"), lyrEl = nowEl.querySelector(".lyr"), lyrBar = $("#lyrbar");
 const starsEl = nowEl.querySelector(".stars"); for (let i = 0; i < 12; i++) starsEl.appendChild(document.createElement("b"));
@@ -366,11 +368,21 @@ function stop() {
   document.body.classList.remove("playing", "bed", "lyrics"); nowEl.classList.remove("on", "spin"); $("#lab").style.opacity = 0; disc.classList.remove("on");
   items.moon.base = 0; beatUntil = clock; BEAT = 60 / BPM;
 }
-function nextSong() { const q = queue(); if (!q.length) return stop(); const n = q[(q.indexOf(cur) + 1) % q.length]; play(n); }
+function nextSong() {
+  const q = queue(); if (!q.length) return stop();
+  if (shuffle && q.length > 1) {
+    bag = bag.filter((i) => q.includes(i) && i !== cur);
+    if (!bag.length) bag = q.filter((i) => i !== cur);
+    const n = bag.splice(Math.floor(Math.random() * bag.length), 1)[0]; return play(n);
+  }
+  const n = q[(q.indexOf(cur) + 1) % q.length]; play(n);
+}
 MUSIC.addEventListener("ended", () => { if (loopAll) nextSong(); else stop(); });
 $("#stop").addEventListener("pointerdown", (e) => { e.preventDefault(); stop(); });
 $("#next").addEventListener("pointerdown", (e) => { e.preventDefault(); nextSong(); });
 $("#loop").addEventListener("pointerdown", (e) => { e.preventDefault(); loopAll = !loopAll; $("#loop").setAttribute("aria-pressed", loopAll); });
+// shuffle turns "play them all" on too, so the mixed-up songs keep coming
+$("#shuffle").addEventListener("pointerdown", (e) => { e.preventDefault(); shuffle = !shuffle; bag = []; $("#shuffle").setAttribute("aria-pressed", shuffle); if (shuffle && !loopAll) { loopAll = true; $("#loop").setAttribute("aria-pressed", true); } });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeCrate(); });
 const songT = () => demoT !== null ? clock - demoT : MUSIC.currentTime || 0;
 function nowPlaying() {
