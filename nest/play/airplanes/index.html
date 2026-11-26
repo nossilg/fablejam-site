@@ -92,7 +92,7 @@ body.land #ctrl{right:max(14px,env(safe-area-inset-right));top:50%;transform:tra
 const Q = new URLSearchParams(location.search);       // only used for the ?demo= screenshot helper
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const WW = 2752, WH = 1536, IMG = "img/";
-const CX = 1050, FEET = 634, GROUND = 1085, DIR = -1, DF = true, FS = 1.1;   // Crumb stands at the limb's outer end (bark top y 629 at x 1040) facing LEFT; flights go left over the meadow           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
+const CX = 1600, FEET = 578, GROUND = 1085, DIR = -1, DF = true, FS = 2.1;   // Crumb stands at the limb's outer end (bark top y 565-580 at x 1530-1670, near the trunk) facing LEFT; flights go left over the meadow           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
 const COLS = ["", "-y", "-b"];
 const $ = (s) => document.querySelector(s);
 const world = $("#world"), body = document.body;
@@ -179,7 +179,8 @@ const tween = (t0, d, fn) => tl.tweens.push({ t0, d, fn, done: false });
 let parts = [];            // particles
 let temp = [];             // elements to clear at the end of a round
 function step(dt) {
-  if (!tl.on) return;
+  if (!tl.on) { camStep(dt); return; }
+  camStep(dt);
   tl.t += dt;
   for (const c of tl.cues) if (!c.done && tl.t >= c.t) { c.done = true; c.fn(); }
   for (const w of tl.tweens) if (!w.done && tl.t >= w.t0) { const u = clamp((tl.t - w.t0) / w.d); w.fn(u, dt); if (u >= 1) w.done = true; }
@@ -217,7 +218,8 @@ function buildActors() {
 }
 let pv = null, flipState = false;
 const NOSE = { level: 0, climb: 27, dive: -34 };
-function planeRaw(x, y, rot, flip, spr, sc = 1) { plane.show("glider-" + spr + COLS[colour]); plane.set(x, y, rot, flip ? -1 : 1, sc); }
+let planeX = CX;
+function planeRaw(x, y, rot, flip, spr, sc = 1) { planeX = x; plane.show("glider-" + spr + COLS[colour]); plane.set(x, y, rot, flip ? -1 : 1, sc); }
 // the usual call: facing the flight direction (left); rot is written as if flying right and gets mirrored
 function planeSet(x, y, rot, _f, spr, sc = 1) { planeRaw(x, y, DIR * rot, DF, spr, sc); }
 // move the plane along pos(u); heading follows the path (smoothed) unless o.rot or o.spr say otherwise
@@ -394,21 +396,22 @@ const LAND_NAMES = Object.keys(LAND);
 function react(t, keepPose) {
   const word = pick(["wow", "again"]);
   cue(t, () => {
+    cam.follow = false;
     if (!keepPose) crumb.show("crumb-go");
     snd.fanfare(); snd.wow(); if (word === "again") say("again");
     bubble.innerHTML = (word === "wow"
       ? `<svg viewBox="0 0 40 40"><path d="M20 2l5 12 13 1-10 9 3 13-11-7-11 7 3-13L2 15l13-1z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg>Wow!`
       : `<svg viewBox="0 0 40 40"><path d="M31 12A13 13 0 1 0 33 24" fill="none" stroke="#4fae3a" stroke-width="6" stroke-linecap="round"/><path d="M33 3v12H21z" fill="#4fae3a"/></svg>Again!`);
-    bubble.style.display = "flex"; bubble.style.transform = `translate(${CX - 260}px,${FEET - 580}px) scale(.01)`;
+    bubble.style.display = "flex"; bubble.style.transform = `translate(${CX - 430}px,${FEET - 500}px) scale(.01)`;
   });
-  tween(t, .4, (u) => { const s = eout(u); bubble.style.transform = `translate(${CX - 260}px,${FEET - 580}px) scale(${s})`; });
+  tween(t, .4, (u) => { const s = eout(u); bubble.style.transform = `translate(${CX - 430}px,${FEET - 500}px) scale(${s})`; });
   tween(t, 1.1, (u) => { hopY = REDUCE ? 14 * Math.abs(Math.sin(u * Math.PI * 2)) : 46 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u * .4); rock = 0; if (u >= 1) hopY = 0; });
   cue(t + 2.2, () => { for (const e of temp) e.style.transition = "opacity .35s", e.style.opacity = 0; plane.hide(); bubble.style.display = "none"; });
   cue(t + 2.6, reset);
 }
 function reset() {
   for (const e of temp) e.remove(); temp = []; for (const p of parts) p.el.remove(); parts = [];
-  tl.on = false; tl.cues = []; tl.tweens = []; hopY = 0; rock = 0; crumbSquash = 1;
+  cam.follow = false; tl.on = false; tl.cues = []; tl.tweens = []; hopY = 0; rock = 0; crumbSquash = 1;
   crumb.show("crumb-catch"); plane.hide(); pv = null; flipState = DF;
   state = 0; refresh();
 }
@@ -428,7 +431,7 @@ function startRound(o = {}) {
   }
   // the throw: GO pose, the plane leaves the paw
   const S = [CX - 262, FEET - 296];
-  cue(B, () => { crumb.show("crumb-go"); plane.vis(); planeSet(S[0], S[1], -8, false, "level"); snd.whoosh(); });
+  cue(B, () => { cam.follow = true; planeX = CX - 262; crumb.show("crumb-go"); plane.vis(); planeSet(S[0], S[1], -8, false, "level"); snd.whoosh(); });
   tween(B, .35, (u) => { planeSet(S[0], S[1], -8, false, "level", .7 + .3 * u); });
   cue(B + .45, () => crumb.show("crumb-watch"));
   const F = FLIGHTS[fl](B + .18, S);
@@ -484,6 +487,20 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 
 // ---------- camera: fit the action (x 880-1900, y 120-1130) in whatever screen this is ----------
+// camera: desktop and landscape show the whole run; portrait pans with the plane (eased, never a jump) and glides back to Crumb
+let cam = { s: 1, y0: 0, vw: 0, wv: 1000, pan: false, x: 1380, target: 1380, follow: false };
+function camHome() { return CX - 230; }
+function camApply() {
+  const x0 = clamp(cam.x - cam.wv / 2, 0, WW - cam.wv);
+  world.style.transform = `scale(${cam.s}) translate(${-x0}px,${-cam.y0}px)`;
+}
+function camStep(dt) {
+  if (!cam.pan) return;
+  cam.target = cam.follow ? planeX : camHome();
+  const k = 1 - Math.exp(-dt * (cam.follow ? 2.6 : 1.6));
+  let d = (cam.target - cam.x) * k, m = 900 * dt; d = Math.max(-m, Math.min(m, d)); cam.x += d;
+  camApply();
+}
 function layout() {
   const vw = innerWidth, vh = innerHeight, land = vw / vh >= 1.15;
   body.classList.toggle("land", land); body.classList.toggle("portrait", !land);
@@ -491,19 +508,20 @@ function layout() {
   let s, x0, y0, sw = vw, sh = vh;
   if (land) {
     const pad = Math.max(120, Math.min(190, vh * .3)) ;
-    s = Math.min((vw - pad) / 1100, vh / 1220);
+    s = Math.min((vw - pad) / 1950, vh / 1220);
     s = Math.max(s, vw / WW);
-    x0 = 700 - ((vw - pad) / 2) / s; y0 = 650 - vh / (2 * s);
+    x0 = 975 - ((vw - pad) / 2) / s; y0 = 640 - vh / (2 * s);
     stage.style.height = "100%"; panel.style.display = "none";
   } else {
     const ctrlH = clamp(vh * .3, 200, 270);
-    s = vw / 1260; sh = Math.min(vh - ctrlH, WH * s);
-    x0 = 700 - vw / (2 * s); y0 = 625 - sh / (2 * s);
+    s = vw / 1000; sh = Math.min(vh - ctrlH, WH * s);
+    x0 = camHome() - vw / (2 * s); y0 = 600 - sh / (2 * s);
     stage.style.height = sh + "px"; panel.style.display = "block"; panel.style.top = sh + "px";
     $("#ctrl").style.top = sh + "px"; $("#ctrl").style.bottom = "0";
   }
   x0 = clamp(x0, 0, WW - sw / s); y0 = clamp(y0, 0, WH - sh / s);
-  world.style.transform = `scale(${s}) translate(${-x0}px,${-y0}px)`;
+  cam.s = s; cam.y0 = y0; cam.wv = sw / s; cam.pan = !land;
+  if (land) { cam.x = x0 + cam.wv / 2; camApply(); } else { cam.x = cam.follow ? cam.x : camHome(); camApply(); }
 }
 addEventListener("resize", layout); addEventListener("orientationchange", layout);
 
