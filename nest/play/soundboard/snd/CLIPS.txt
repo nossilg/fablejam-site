@@ -9,5 +9,5 @@ pop     140.02-140.72  "POP! POP!" (bridge)
 jingle  153.86-154.58  "Jingle, jingle!" echo
 tiptap  171.47-172.80  "Tip, tap!" echo
 peep    187.40-188.30  "Peep, peep!" echo
-shine   205.44-206.82  "Shine, shine..." echo
+shine   204.12-205.84  "Shine, shine..." echo: the soft kids' echo, boosted to match (was 205.44-206.82, which caught "Loved in every"; Mike, 2026-11-26)
 chorus  9.60-18.00     "Fable Jam-a-jam-O! Jam-O!" x2 hook, 0.4 s fade-out, -6 dB peak
