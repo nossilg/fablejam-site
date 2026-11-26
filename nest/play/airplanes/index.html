@@ -25,6 +25,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .act img{position:absolute;display:none;max-width:none;pointer-events:none}
 .fx{position:absolute;pointer-events:none;will-change:transform,opacity}
 .ring{border:7px solid rgba(255,255,255,.85);border-radius:50%}
+.puddle{border-radius:50%;background:radial-gradient(ellipse at 50% 45%,#bfe6f7 0,#8fcbe8 70%,#6fb0d4 100%);border:5px solid #5b9fc6;box-shadow:inset 0 -8px 0 rgba(255,255,255,.35)}
 .drop{width:16px;height:16px;border-radius:50%;background:#d8f1ff;border:3px solid #7ab9e0}
 .star{width:30px;height:30px;background:#ffe27a;clip-path:polygon(50% 0,62% 36%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,38% 36%);opacity:.95}
 #bubble{position:absolute;left:0;top:0;display:none;align-items:center;gap:16px;padding:14px 34px 14px 22px;background:#fff;border:9px solid var(--ink);border-radius:80px;font-size:92px;line-height:1;color:var(--ink);white-space:nowrap;transform-origin:50% 100%;pointer-events:none}
@@ -42,10 +43,14 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .big:active:not(:disabled){transform:translateY(5px);box-shadow:0 2px 0 var(--ink)}
 @keyframes pulse{50%{transform:scale(1.07)}}
 /* portrait: stage on top, grass panel with buttons below */
-body.portrait #ctrl{left:0;right:0;bottom:0;justify-content:center;align-items:center;--bs:clamp(84px,25vw,150px)}
+body.land #gate{right:calc(max(10px,env(safe-area-inset-right)) + 152px);top:calc(max(10px,env(safe-area-inset-top)) + 9px)}
+body.portrait #home{right:auto;top:auto;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #mute{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #gate{top:auto;right:auto;left:50%;margin-left:-66px;bottom:max(16px,env(safe-area-inset-bottom))}
+body.portrait #ctrl{left:0;right:0;bottom:0;justify-content:center;align-items:flex-start;padding-top:16px;--bs:clamp(84px,25vw,130px)}
 body.portrait #panel{display:block}
 #panel{display:none;position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#a6d676,#7dbb58);border-top:6px solid var(--ink)}
-body.land #ctrl{left:max(14px,env(safe-area-inset-left));top:50%;transform:translateY(-50%);flex-direction:column;--bs:clamp(68px,min(19vh,13vw),130px)}
+body.land #ctrl{right:max(14px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);flex-direction:column;--bs:clamp(68px,min(19vh,13vw),130px)}
 /* top buttons */
 .round{position:absolute;z-index:6;width:64px;height:64px;border-radius:50%;border:5px solid var(--ink);background:var(--paper);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 5px 0 var(--ink);touch-action:none}
 .round svg{width:60%;height:60%}
@@ -87,7 +92,7 @@ body.land #ctrl{left:max(14px,env(safe-area-inset-left));top:50%;transform:trans
 const Q = new URLSearchParams(location.search);       // only used for the ?demo= screenshot helper
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const WW = 2752, WH = 1536, IMG = "img/";
-const CX = 1130, FEET = 644, GROUND = 1085;           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
+const CX = 1050, FEET = 634, GROUND = 1085, DIR = -1, DF = true, FS = 1.1;   // Crumb stands at the limb's outer end (bark top y 629 at x 1040) facing LEFT; flights go left over the meadow           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
 const COLS = ["", "-y", "-b"];
 const $ = (s) => document.querySelector(s);
 const world = $("#world"), body = document.body;
@@ -203,7 +208,7 @@ const GL = ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"];
 let hopY = 0, rock = 0, crumbSquash = 1;
 function renderCrumb(now) {
   const breathe = (!tl.on && !REDUCE) ? 1 + .012 * Math.sin(now * 2.6) : 1;
-  crumb.set(CX, FEET - hopY, rock, 1, 1, breathe * crumbSquash);
+  crumb.set(CX, FEET - hopY, rock, -1, 1, breathe * crumbSquash);
 }
 function buildActors() {
   crumb = actor(LC, crumbNames, 1, "b"); crumb.show("crumb-catch");
@@ -212,7 +217,9 @@ function buildActors() {
 }
 let pv = null, flipState = false;
 const NOSE = { level: 0, climb: 27, dive: -34 };
-function planeSet(x, y, rot, flip, spr, sc = 1) { plane.show("glider-" + spr + COLS[colour]); plane.set(x, y, rot, flip ? -1 : 1, sc); }
+function planeRaw(x, y, rot, flip, spr, sc = 1) { plane.show("glider-" + spr + COLS[colour]); plane.set(x, y, rot, flip ? -1 : 1, sc); }
+// the usual call: facing the flight direction (left); rot is written as if flying right and gets mirrored
+function planeSet(x, y, rot, _f, spr, sc = 1) { planeRaw(x, y, DIR * rot, DF, spr, sc); }
 // move the plane along pos(u); heading follows the path (smoothed) unless o.rot or o.spr say otherwise
 function fly(t0, d, pos, o = {}) {
   tween(t0, d, (u, dt) => {
@@ -220,12 +227,12 @@ function fly(t0, d, pos, o = {}) {
     const v = [a[0] - b[0], a[1] - b[1]];
     if (!pv) pv = v.slice(); else { const k = 1 - Math.exp(-dt * 11); pv[0] += (v[0] - pv[0]) * k; pv[1] += (v[1] - pv[1]) * k; }
     if (pv[0] < -10) flipState = true; else if (pv[0] > 10) flipState = false;
-    if (o.rot) { planeSet(p[0], p[1], o.rot(u), false, o.spr ? o.spr(u) : "level", o.sc ? o.sc(u) : 1); return; }
+    if (o.rot) { planeSet(p[0], p[1], o.rot(u), 0, o.spr ? o.spr(u) : "level", o.sc ? o.sc(u) : 1); return; }
     const elev = Math.atan2(-pv[1], Math.abs(pv[0])) * 180 / Math.PI;
     let spr = "level"; if (elev > 40) spr = "climb"; else if (elev < -42) spr = "dive";
     if (o.spr) spr = o.spr(u);
     const base = o.spr ? 0 : NOSE[spr], r = elev - base;
-    planeSet(p[0], p[1], flipState ? r : -r, flipState, spr, o.sc ? o.sc(u) : 1);
+    planeRaw(p[0], p[1], flipState ? r : -r, flipState, spr, o.sc ? o.sc(u) : 1);
   });
 }
 const hold = (pos) => () => pos;     // stay put
@@ -233,45 +240,45 @@ const hold = (pos) => () => pos;     // stay put
 // ---------- flights (a short silly trick, then the landing starts from wherever it ended) ----------
 const FLIGHTS = {
   loop(t, S) {
-    const R = 105, p1 = [S[0] + 140, S[1] + 40], q = [p1[0] + 90, p1[1]], E = [q[0] + 280, q[1] + 90];
+    const R = 105, p1 = [S[0] + DIR * FS * 140, S[1] + 40], q = [p1[0] + DIR * FS * 90, p1[1]], E = [q[0] + DIR * FS * 280, q[1] + 90];
     fly(t, .7, (u) => L2(S, p1, eio(u)));
     cue(t + .55, snd.whoosh);
-    fly(t + .7, 1.4, (u) => { const f = eio(u) * 2 * Math.PI; return [p1[0] + R * Math.sin(f) + 90 * u, p1[1] - R * (1 - Math.cos(f))]; }, { rot: (u) => -360 * eio(u) });
+    fly(t + .7, 1.4, (u) => { const f = eio(u) * 2 * Math.PI; return [p1[0] + DIR * (R * Math.sin(f) + 90 * FS * u), p1[1] - R * (1 - Math.cos(f))]; }, { rot: (u) => -360 * eio(u) });
     fly(t + 2.1, .9, (u) => L2(q, E, eio(u)));
     return { t: t + 3, E };
   },
   barrel(t, S) {
-    const E = [S[0] + 470, S[1] + 100];
+    const E = [S[0] + DIR * FS * 470, S[1] + 100];
     const seq = [[0, "level"], [.16, "bank"], [.3, "inv1"], [.46, "inv2"], [.62, "inv1"], [.76, "bank"], [.9, "level"]];
     cue(t + .2, snd.whoosh);
     fly(t, 2.6, (u) => [lerp(S[0], E[0], u), lerp(S[1], E[1], u) - 60 * Math.sin(u * Math.PI)], { rot: () => 0, spr: (u) => { let s = "level"; for (const [k, n] of seq) if (u >= k) s = n; return s; } });
     return { t: t + 2.6, E };
   },
   wobble(t, S) {
-    const E = [S[0] + 480, S[1] + 140], A = REDUCE ? 20 : 70;
+    const E = [S[0] + DIR * FS * 480, S[1] + 140], A = REDUCE ? 20 : 70;
     cue(t + .1, snd.whoosh);
     fly(t, 2.8, (u) => [lerp(S[0], E[0], u), lerp(S[1], E[1], u) + A * Math.sin(u * Math.PI * 6) * Math.sin(Math.PI * u) ]);
     for (let i = 0; i < 3; i++) cue(t + .4 + i * .9, () => tone(520, 0, .25, .06, 700, "triangle"));
     return { t: t + 2.8, E };
   },
   zigzag(t, S) {
-    const P = [S, [S[0] + 110, S[1] - 110], [S[0] + 220, S[1] + 60], [S[0] + 340, S[1] - 110], [S[0] + 450, S[1] + 80], [S[0] + 540, S[1] - 20]];
+    const P = [S, [S[0] + DIR * FS * 110, S[1] - 110], [S[0] + DIR * FS * 220, S[1] + 60], [S[0] + DIR * FS * 340, S[1] - 110], [S[0] + DIR * FS * 450, S[1] + 80], [S[0] + DIR * FS * 540, S[1] - 20]];
     const E = P[P.length - 1]; cue(t + .1, snd.whoosh);
     fly(t, 2.7, (u) => { const k = u * (P.length - 1), i = Math.min(P.length - 2, Math.floor(k)); return L2(P[i], P[i + 1], eio(k - i)); });
     P.slice(1, -1).forEach((_, i) => cue(t + .45 + i * .5, () => tone(900 + i * 150, 0, .12, .06, 1300 + i * 150, "triangle")));
     return { t: t + 2.7, E };
   },
   glide(t, S) {
-    const C = [S[0] + 330, S[1] - 230], E = [S[0] + 560, S[1] + 90];
+    const C = [S[0] + DIR * FS * 330, S[1] - 230], E = [S[0] + DIR * FS * 560, S[1] + 90];
     cue(t + .1, snd.whoosh);
     fly(t, 3.4, (u) => { const e = u; return [(1 - e) * (1 - e) * S[0] + 2 * (1 - e) * e * C[0] + e * e * E[0], (1 - e) * (1 - e) * S[1] + 2 * (1 - e) * e * C[1] + e * e * E[1]]; }, { sc: (u) => 1 + .12 * Math.sin(u * Math.PI) });
     return { t: t + 3.4, E };
   },
   boomerang(t, S) {
-    const p1 = [S[0] + 280, S[1] + 40], R = 115, Cc = [p1[0], p1[1] - R], top = [Cc[0], Cc[1] - R], E = [S[0] + 190, S[1] + 70];
+    const p1 = [S[0] + DIR * FS * 280, S[1] + 40], R = 115, Cc = [p1[0], p1[1] - R], top = [Cc[0], Cc[1] - R], E = [S[0] + DIR * FS * 190, S[1] + 70];
     cue(t + .1, snd.whoosh);
     fly(t, .9, (u) => L2(S, p1, eio(u)));
-    fly(t + .9, 1.3, (u) => { const th = Math.PI / 2 - Math.PI * eio(u); return [Cc[0] + R * Math.cos(th), Cc[1] + R * Math.sin(th)]; });
+    fly(t + .9, 1.3, (u) => { const th = Math.PI / 2 - Math.PI * eio(u); return [Cc[0] + DIR * R * Math.cos(th), Cc[1] + R * Math.sin(th)]; });
     fly(t + 2.2, .9, (u) => L2(top, E, eio(u)));
     return { t: t + 3.1, E };
   },
@@ -282,23 +289,23 @@ function hit(x, y, big) { const r = fxDiv("ring", x, y, 90, 90); tween(tl.t, .45
 function popIn(a, x, y, t0, flip = 1, d = .35, k = 1) { a.vis(); tween(t0, d, (u) => { const s = eout(u); a.set(x, y + (1 - s) * 40, 0, flip, s * k, s * k); }); }
 const LAND = {
   pile(t, E) {
-    const G = [pick([1330, 1400, 1470]), GROUND + 20];
+    const G = [pick([330, 420, 510]), GROUND + 20];
     fly(t, 1.1, (u) => arcUp(E, [G[0], G[1] - 190], eio(u * .6 + .4 * u * u) , 120));
     cue(t + 1.1, () => { plane.show("glider-stuck" + COLS[colour]); plane.set(G[0], G[1] - plane.h("glider-stuck" + COLS[colour]) / 2 + 12); snd.poof(); leafBurst(G[0], G[1] - 10, 11); });
     tween(t + 1.1, 1.5, (u) => { plane.show("glider-stuck" + COLS[colour]); plane.set(G[0], G[1] - plane.h("glider-stuck" + COLS[colour]) / 2 + 12, 5 * Math.sin(u * 22) * (1 - u) , 1); });
     return t + 2.8;
   },
   pinball(t, E) {
-    const B = [[1528, 412], [1228, 368], [1557, 465]], G = [1500, GROUND - 30];
-    const pts = [E, ...B]; let tt = t; const dur = [.8, .75, .7];
-    for (let i = 0; i < 3; i++) { const a = pts[i], b = pts[i + 1], t0 = tt, d = dur[i]; fly(t0, d, (u) => arcUp(a, b, u, 30 + i * 10)); const bi = i; cue(t0 + d, () => { snd.boing(1 + bi * .22); hit(b[0], b[1], 1.8); }); tt += d; }
-    const last = B[2];
+    const B = [[669, 837], [695, 912]], G = [560, GROUND - 30];
+    const pts = [E, ...B]; let tt = t; const dur = [.9, .55];
+    for (let i = 0; i < 2; i++) { const a = pts[i], b = pts[i + 1], t0 = tt, d = dur[i]; fly(t0, d, (u) => arcUp(a, b, u, 30 + i * 10)); const bi = i; cue(t0 + d, () => { snd.boing(1 + bi * .22); hit(b[0], b[1], 1.8); }); tt += d; }
+    const last = B[1];
     fly(tt, 1.2, (u) => { const p = arcUp(last, G, u, -60); return p; });
     cue(tt + 1.2, () => { snd.plink(); hit(G[0], G[1] + 20, 1.2); });
     return tt + 1.2 + .5;
   },
   jet(t, E) {
-    const J = [1290, GROUND + 30], jet = actor(LB, ["jet-up", "jet-oh", "jet-idle"], 1.15, "b"); temp.push(jet.box); jet.show("jet-up"); jet.hide();
+    const J = [620, GROUND + 30], jet = actor(LB, ["jet-up", "jet-oh", "jet-idle"], 1.15, "b"); temp.push(jet.box); jet.show("jet-up"); jet.hide();
     const H = [J[0] - 12, J[1] - jet.h("jet-up") + 2];
     cue(t, () => { snd.pop(); popIn(jet, J[0], J[1], tl.t, 1, .4); });
     fly(t, 1.5, (u) => arcUp(E, [H[0], H[1] - 30], u, 80));
@@ -309,22 +316,22 @@ const LAND = {
     return t + 3.5;
   },
   bucky(t, E) {
-    const B = [1640, GROUND + 25], bk = actor(LB, ["bucky-sit", "bucky-leap", "bucky-hold" + COLS[colour], "bucky-offer" + COLS[colour], "bucky-wave"], 1, "b"); temp.push(bk.box);
+    const B = [330, GROUND + 25], bk = actor(LB, ["bucky-sit", "bucky-leap", "bucky-hold" + COLS[colour], "bucky-offer" + COLS[colour], "bucky-wave"], 1, "b"); temp.push(bk.box);
     bk.show("bucky-sit"); bk.hide();
-    const C = [1600, 805];
-    cue(t + .1, () => { snd.pop(); popIn(bk, B[0], B[1], tl.t, -1, .35); });
+    const C = [350, 805];
+    cue(t + .1, () => { snd.pop(); popIn(bk, B[0], B[1], tl.t, 1, .35); });
     fly(t, 1.6, (u) => arcUp(E, C, eio(u), 60));
     cue(t + 1.05, () => { bk.show("bucky-leap"); snd.boing(1.5); });
-    tween(t + 1.05, .55, (u) => bk.set(B[0] - 20 * u, B[1] - 235 * Math.sin(u * Math.PI * .5) , 0, -1));
+    tween(t + 1.05, .55, (u) => bk.set(B[0] + 20 * u, B[1] - 235 * Math.sin(u * Math.PI * .5) , 0, 1));
     cue(t + 1.6, () => { plane.hide(); bk.show("bucky-hold" + COLS[colour]); snd.plink(); snd.wow(); });
-    tween(t + 1.6, .4, (u) => bk.set(B[0] - 20, B[1] - 235 * (1 - eio(u)), 0, 1));
-    tween(t + 2.0, 1.0, (u) => { const s = 1 + .04 * Math.sin(u * Math.PI * 4) * (1 - u); bk.set(B[0] - 20, B[1], 0, 1, 1, s); });
+    tween(t + 1.6, .4, (u) => bk.set(B[0] + 20, B[1] - 235 * (1 - eio(u)), 0, -1));
+    tween(t + 2.0, 1.0, (u) => { const s = 1 + .04 * Math.sin(u * Math.PI * 4) * (1 - u); bk.set(B[0] + 20, B[1], 0, -1, 1, s); });
     cue(t + 3.0, () => { bk.show("bucky-offer" + COLS[colour]); snd.squeak(); });
-    tween(t + 3.0, .5, (u) => bk.set(B[0] - 20 - 30 * eout(u), B[1], 0, -1));
+    tween(t + 3.0, .5, (u) => bk.set(B[0] + 20 + 30 * eout(u), B[1], 0, 1));
     return t + 4.2;
   },
   nest(t, E) {
-    const N = [1665, 335], nb = document.createElement("div");
+    const N = [560, 430], nb = document.createElement("div");
     nb.innerHTML = `<svg width="300" height="170" viewBox="0 0 300 170" style="position:absolute;left:-150px;top:-95px"><ellipse cx="150" cy="75" rx="138" ry="62" fill="#4a2c18"/><ellipse cx="150" cy="68" rx="112" ry="42" fill="#2e1a0e"/></svg>`;
     const nf = document.createElement("div");
     nf.innerHTML = `<svg width="300" height="170" viewBox="0 0 300 170" style="position:absolute;left:-150px;top:-95px"><g fill="none" stroke-linecap="round"><path d="M14 80Q150 190 286 80" stroke="#6e4524" stroke-width="30"/><path d="M20 78Q150 175 280 78" stroke="#a9733c" stroke-width="16"/><path d="M30 86Q150 178 270 86" stroke="#8a5a30" stroke-width="9"/><path d="M26 70Q80 120 150 128" stroke="#c28a4c" stroke-width="6"/><path d="M274 70Q220 120 150 128" stroke="#c28a4c" stroke-width="6"/><path d="M60 100Q120 150 200 132" stroke="#5a381d" stroke-width="7"/><path d="M40 90Q150 160 262 94" stroke="#d4a15e" stroke-width="4"/></g><path d="M50 60 38 40M250 62 266 42M80 40 70 22" stroke="#8a5a30" stroke-width="7" stroke-linecap="round"/></svg>`;
@@ -336,14 +343,15 @@ const LAND = {
     const EJ = [N[0] - 40, N[1] + 28];
     cue(t, () => { snd.pop(); });
     tween(t, .45, (u) => { const s = eout(u); nb.style.transform = nf.style.transform = `translate(${N[0]}px,${N[1]}px) scale(${s})`; ej.vis(); ej.set(EJ[0], EJ[1] + (1 - s) * 40, 0, 1, s); });
-    fly(t, 1.7, (u) => arcUp(E, [N[0] + 25, N[1] - 5], eio(u), 110), { sc: (u) => 1 - .3 * eio(clamp((u - .8) * 5)) });
+    fly(t, 1.7, (u) => arcUp(E, [N[0] - 25, N[1] - 5], eio(u), 110), { sc: (u) => 1 - .3 * eio(clamp((u - .8) * 5)) });
     cue(t + .95, () => ej.show("ej-lookup"));
-    cue(t + 1.7, () => { ej.show("ej-cheer"); snd.plink(); snd.wow(); hit(N[0] + 20, N[1] - 30, 1.1); planeSet(N[0] + 25, N[1] - 5, -6, false, "level", .7); });
+    cue(t + 1.7, () => { ej.show("ej-cheer"); snd.plink(); snd.wow(); hit(N[0] + 20, N[1] - 30, 1.1); planeSet(N[0] - 25, N[1] - 5, -6, false, "level", .7); });
     tween(t + 1.7, 1.2, (u) => { ej.set(EJ[0], EJ[1] - 22 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u), 0, 1); });
     return t + 3.4;
   },
   splash(t, E) {
-    const W = [1570 + rnd(-40, 40), 1018];
+    const W = [480 + rnd(-40, 40), 1065];
+    const pd = fxDiv("puddle", W[0], W[1] + 20, 420, 90, LB); pd.style.opacity = 0; tween(t, .5, (u) => { pd.style.opacity = u; });
     fly(t, 1.35, (u) => arcUp(E, [W[0], W[1] - 40], eio(u * .7 + .3 * u * u), 100));
     cue(t + 1.35, () => {
       snd.splash(); for (let i = 0; i < 3; i++) { const r = fxDiv("ring", W[0], W[1] + 22, 150, 40); r.style.borderWidth = "5px"; tween(tl.t + i * .25, 1.3, (u) => { r.style.transform = `translate(${W[0]}px,${W[1] + 22}px) scale(${.5 + u * 1.7},${.5 + u * 1.7})`; r.style.opacity = (1 - u) * .85; }); }
@@ -353,7 +361,7 @@ const LAND = {
     return t + 3.7;
   },
   stuck(t, E) {
-    const Q2 = [1490, 262], leaves = [];
+    const Q2 = [560, 520], leaves = [];
     fly(t, 1.2, (u) => arcUp(E, Q2, eio(u), 60));
     const mk = (n, x, y, s, r) => { const im = document.createElement("img"); im.src = IMG + n + ".webp"; im.className = "fx"; im.draggable = false; im.style.width = nat[n].w * s + "px"; im.style.left = -nat[n].w * s / 2 + "px"; im.style.top = -nat[n].h * s / 2 + "px"; im.style.transform = "scale(0)"; LF.appendChild(im); temp.push(im); leaves.push({ im, x, y, s, r }); };
     mk("p-leaf1", Q2[0] - 20, Q2[1] + 22, 1.1, -18); mk("p-leaf2", Q2[0] + 38, Q2[1] + 30, 1.0, 20); mk("p-leaf4", Q2[0] + 8, Q2[1] + 58, .95, 4); mk("p-leaf3", Q2[0] - 55, Q2[1] + 48, 1.0, -5);
@@ -371,8 +379,8 @@ const LAND = {
     return t + 5.2;
   },
   back(t, E) {
-    const P = [CX + 170, FEET - 175];
-    fly(t, 1.7, (u) => { const m = [E[0] - 40, E[1] - 140], a = lerp(1 - u, 0, 0); return [(1 - u) * (1 - u) * E[0] + 2 * (1 - u) * u * m[0] + u * u * P[0], (1 - u) * (1 - u) * E[1] + 2 * (1 - u) * u * m[1] + u * u * P[1]]; });
+    const P = [CX - 170, FEET - 175];
+    fly(t, 1.7, (u) => { const m = [E[0] + 40, E[1] - 140], a = lerp(1 - u, 0, 0); return [(1 - u) * (1 - u) * E[0] + 2 * (1 - u) * u * m[0] + u * u * P[0], (1 - u) * (1 - u) * E[1] + 2 * (1 - u) * u * m[1] + u * u * P[1]]; });
     cue(t + 1.25, () => crumb.show("crumb-catch"));
     cue(t + 1.7, () => { plane.hide(); snd.pop(); snd.plink(); crumb.show("crumb-ready" + COLS[colour]); hit(P[0], P[1], 1.2); });
     tween(t + 1.7, .5, (u) => { crumbSquash = 1 - .06 * Math.sin(u * Math.PI); });
@@ -391,9 +399,9 @@ function react(t, keepPose) {
     bubble.innerHTML = (word === "wow"
       ? `<svg viewBox="0 0 40 40"><path d="M20 2l5 12 13 1-10 9 3 13-11-7-11 7 3-13L2 15l13-1z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg>Wow!`
       : `<svg viewBox="0 0 40 40"><path d="M31 12A13 13 0 1 0 33 24" fill="none" stroke="#4fae3a" stroke-width="6" stroke-linecap="round"/><path d="M33 3v12H21z" fill="#4fae3a"/></svg>Again!`);
-    bubble.style.display = "flex"; bubble.style.transform = `translate(${CX - 70}px,${FEET - 580}px) scale(.01)`;
+    bubble.style.display = "flex"; bubble.style.transform = `translate(${CX - 260}px,${FEET - 580}px) scale(.01)`;
   });
-  tween(t, .4, (u) => { const s = eout(u); bubble.style.transform = `translate(${CX - 70}px,${FEET - 580}px) scale(${s})`; });
+  tween(t, .4, (u) => { const s = eout(u); bubble.style.transform = `translate(${CX - 260}px,${FEET - 580}px) scale(${s})`; });
   tween(t, 1.1, (u) => { hopY = REDUCE ? 14 * Math.abs(Math.sin(u * Math.PI * 2)) : 46 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u * .4); rock = 0; if (u >= 1) hopY = 0; });
   cue(t + 2.2, () => { for (const e of temp) e.style.transition = "opacity .35s", e.style.opacity = 0; plane.hide(); bubble.style.display = "none"; });
   cue(t + 2.6, reset);
@@ -401,13 +409,13 @@ function react(t, keepPose) {
 function reset() {
   for (const e of temp) e.remove(); temp = []; for (const p of parts) p.el.remove(); parts = [];
   tl.on = false; tl.cues = []; tl.tweens = []; hopY = 0; rock = 0; crumbSquash = 1;
-  crumb.show("crumb-catch"); plane.hide(); pv = null; flipState = false;
+  crumb.show("crumb-catch"); plane.hide(); pv = null; flipState = DF;
   state = 0; refresh();
 }
 
 // ---------- one round ----------
 function startRound(o = {}) {
-  tl.cues = []; tl.tweens = []; tl.t = 0; pv = null; flipState = false; hopY = 0;
+  tl.cues = []; tl.tweens = []; tl.t = 0; pv = null; flipState = DF; hopY = 0;
   planes.forEach((p) => p.hide()); plane = planes[colour]; plane.hide();
   const fl = o.fl || pick(REDUCE ? ["glide"] : Object.keys(FLIGHTS));
   let ld = o.ld || pick(LAND_NAMES.filter((n) => n !== lastLand));
@@ -419,7 +427,7 @@ function startRound(o = {}) {
     cue(B - .02, () => { rock = 0; });
   }
   // the throw: GO pose, the plane leaves the paw
-  const S = [CX + 262, FEET - 296];
+  const S = [CX - 262, FEET - 296];
   cue(B, () => { crumb.show("crumb-go"); plane.vis(); planeSet(S[0], S[1], -8, false, "level"); snd.whoosh(); });
   tween(B, .35, (u) => { planeSet(S[0], S[1], -8, false, "level", .7 + .3 * u); });
   cue(B + .45, () => crumb.show("crumb-watch"));
@@ -485,12 +493,12 @@ function layout() {
     const pad = Math.max(120, Math.min(190, vh * .3)) ;
     s = Math.min((vw - pad) / 1100, vh / 1220);
     s = Math.max(s, vw / WW);
-    x0 = 1390 - (pad + (vw - pad) / 2) / s; y0 = 650 - vh / (2 * s);
+    x0 = 700 - ((vw - pad) / 2) / s; y0 = 650 - vh / (2 * s);
     stage.style.height = "100%"; panel.style.display = "none";
   } else {
-    const ctrlH = clamp(vh * .28, 170, 230);
-    s = vw / 1180; sh = Math.min(vh - ctrlH, WH * s);
-    x0 = 1390 - vw / (2 * s); y0 = 625 - sh / (2 * s);
+    const ctrlH = clamp(vh * .3, 200, 270);
+    s = vw / 1260; sh = Math.min(vh - ctrlH, WH * s);
+    x0 = 700 - vw / (2 * s); y0 = 625 - sh / (2 * s);
     stage.style.height = sh + "px"; panel.style.display = "block"; panel.style.top = sh + "px";
     $("#ctrl").style.top = sh + "px"; $("#ctrl").style.bottom = "0";
   }
