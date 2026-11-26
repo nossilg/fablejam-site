@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#3a2415">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="crate/crate.js"></script>
 <style>
 @font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
 :root{--ink:#2b1f1e;--paper:#fffbf2;--gold:#f0b21c}
@@ -51,21 +52,89 @@ body.portrait #home{right:auto;top:auto;left:max(10px,env(safe-area-inset-left))
 body.portrait #mute{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}
 body.portrait #gate{top:auto;right:auto;left:50%;margin-left:-66px;bottom:max(16px,env(safe-area-inset-bottom))}
 #curtain{position:absolute;inset:0;background:#fffbf2;opacity:0;pointer-events:none;transition:opacity .4s;z-index:20}
-@media (prefers-reduced-motion:reduce){#disc.on{animation:none}*{transition:none !important}}
+
+/* ---- record crate, now-playing window, controls ---- */
+#dimbg{position:absolute;left:0;top:0;width:2752px;height:1536px;background:rgba(8,10,44,.6);opacity:0;transition:opacity 2s;pointer-events:none}
+body.bed #dimbg{opacity:1}
+body.bed #panel{filter:brightness(.62);transition:filter 2s}
+body.bed #items{filter:brightness(.8) saturate(.9);transition:filter 2s}
+#np{position:absolute;left:1292px;top:126px;width:800px;height:780px;z-index:8500;pointer-events:none;opacity:0;transition:opacity .6s;text-align:center;color:#fff3cf;text-shadow:0 0 18px rgba(255,214,120,.55),0 3px 0 rgba(20,22,60,.9),0 0 3px rgba(20,22,60,.9)}
+#np.on{opacity:1}
+#np .lab{position:absolute;left:340px;top:50px;width:120px;height:120px;border-radius:50%;background:#2b1f1e center/cover;border:5px solid #fff3cf;box-shadow:0 0 0 6px #2b1f1e,0 0 30px rgba(255,214,120,.5)}
+#np .lab::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px;border-radius:50%;background:#20233f;border:3px solid #fff3cf}
+#np.spin .lab{animation:spin2 5s linear infinite}
+@keyframes spin2{to{transform:rotate(360deg)}}
+#np .ttl{position:absolute;left:100px;width:600px;top:186px;font:700 44px/1.1 "Andika",sans-serif}
+#np .stars{position:absolute;left:0;width:800px;top:262px;height:36px;display:flex;justify-content:center;gap:10px}
+.stars b{width:30px;height:30px;display:block;background:rgba(255,243,207,.28);clip-path:polygon(50% 0,62% 36%,100% 38%,70% 60%,80% 98%,50% 76%,20% 98%,30% 60%,0 38%,38% 36%);transition:background .5s}
+.stars b.f{background:#ffd257}
+#np .lyr{position:absolute;left:60px;width:680px;top:312px;font:700 60px/1.12 "Andika",sans-serif}
+.lyr span,#lyrbar span{display:inline-block;margin:0 .12em;color:rgba(255,243,207,.62);transition:color .15s,transform .15s}
+.lyr span.on,#lyrbar span.on{color:#ffc93a;text-shadow:0 0 16px rgba(255,190,60,.8),0 3px 0 rgba(20,22,60,.9)}
+.lyr span.now,#lyrbar span.now{transform:scale(1.12)}
+body.bed #np{color:#d9dcf2;text-shadow:0 0 12px rgba(150,170,255,.4),0 2px 0 rgba(20,22,60,.9)}
+body.bed .stars b.f{background:#c9d2ff}
+body.bed #np .lab{opacity:.75;animation-duration:12s}
+#lyrbar{display:none;position:absolute;left:0;right:0;top:0;height:78px;flex-wrap:wrap;align-content:center;align-items:center;justify-content:center;text-align:center;padding:4px 10px;font:700 24px/1.15 "Andika",sans-serif;color:#fff3cf;background:rgba(20,22,60,.55);z-index:2}
+body.portrait.lyrics #lyrbar{display:flex}
+body.portrait.lyrics #pads{top:84px}
+body.lyrics #np .lyr{display:block}
+body.portrait.lyrics #np .lyr{display:none}
+#crate{position:absolute;left:0;top:0;width:260px;height:200px;margin:-200px 0 0 -130px}
+#ctl{position:absolute;z-index:7;left:50%;bottom:max(14px,env(safe-area-inset-bottom));display:none;gap:16px;transform:translateX(-50%)}
+body.playing #ctl{display:flex}
+body.portrait #ctl{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 62px)}
+#ctl .round{position:relative;width:76px;height:76px}
+#ctl .round[aria-pressed=true]{background:#ffd257}
+#shelf{position:absolute;inset:0;z-index:15;background:rgba(18,12,30,.84);display:none;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:max(84px,calc(env(safe-area-inset-top) + 80px)) 16px 40px}
+#shelf.on{display:block}
+#shelf .in{max-width:1100px;margin:0 auto}
+#shelf h2{margin:22px 4px 10px;font:700 18px/1 "Andika",sans-serif;color:#f6e7c1;display:flex;align-items:center;gap:10px}
+#shelf h2 svg{width:28px;height:28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px}
+.card{display:block;border:0;background:none;padding:0;font:inherit;color:#fffbf2;cursor:pointer;text-align:center;touch-action:pan-y;animation:fan .5s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--i)*45ms)}
+.card .rec{position:relative;display:block;border-radius:14px;border:4px solid #fffbf2;box-shadow:0 6px 0 rgba(0,0,0,.55);overflow:hidden;background:#2b1f1e;aspect-ratio:16/9}
+.card img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
+.card .rec::after{content:"";position:absolute;right:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,#f0b21c 0 22%,#2b1f1e 24% 100%);border:3px solid #fffbf2}
+.card:active .rec{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.55)}
+.card.cur .rec{border-color:#ffd257;box-shadow:0 0 0 4px #ffd257,0 6px 0 rgba(0,0,0,.55)}
+.card span.t{display:block;margin-top:8px;font:700 13px/1.2 "Andika",sans-serif;color:#e9dcc2}
+@keyframes fan{from{opacity:0;transform:translateY(60px) rotate(calc((var(--i) - 3)*5deg)) scale(.7)}to{opacity:1;transform:none}}
+#shelf .x,#shelf .mn{position:fixed;top:max(12px,env(safe-area-inset-top));width:64px;height:64px;z-index:16}
+#shelf .x{right:max(10px,env(safe-area-inset-right))}
+#shelf .mn{left:max(10px,env(safe-area-inset-left))}
+#shelf .mn[aria-pressed=true]{background:#c9d2ff}
+#lab{position:absolute;left:0;top:0;width:150px;height:34px;margin:-17px 0 0 -75px;border-radius:50%;background:#2b1f1e center/cover;border:3px solid #fffbf2;opacity:0;pointer-events:none;z-index:8400;transition:opacity .3s}
+@media (orientation:landscape) and (max-height:520px){
+#ctl{left:max(10px,env(safe-area-inset-left));top:50%;bottom:auto;transform:translateY(-50%);flex-direction:column;gap:10px}
+#ctl .round{width:62px;height:62px}
+body.land #gate{top:auto;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom))}
+}
+@media (prefers-reduced-motion:reduce){#disc.on,#np.spin .lab,.card{animation:none !important}*{transition:none !important}}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="stage"><div id="world">
     <img class="bg" src="img/bg.webp" alt="" draggable="false">
-    <div id="disc"></div>
+    <div id="dimbg"></div>
+    <div id="disc"></div><div id="lab"></div>
+    <div id="np"><div class="lab"></div><div class="ttl"></div><div class="stars"></div><div class="lyr"></div></div>
     <div id="items"></div>
     <div id="hits"></div>
   </div></div>
-  <div id="panel"><div id="pads"></div></div>
+  <div id="panel"><div id="lyrbar"></div><div id="pads"></div></div>
   <button class="round" id="home" aria-label="Back to the play corner"><svg viewBox="0 0 40 40"><path d="M5 20 20 6l15 14" fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v15h20V19" fill="#f0b21c" stroke="#2b1f1e" stroke-width="4" stroke-linejoin="round"/></svg></button>
   <button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
   <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to go back to the Fable Jam Nest page."><i></i><span>Grown-ups: press and hold to leave</span></button>
+  <div id="ctl">
+    <button class="round" id="stop" aria-label="Stop the music"><svg viewBox="0 0 40 40"><rect x="9" y="9" width="22" height="22" rx="4" fill="#d7352a" stroke="#2b1f1e" stroke-width="3"/></svg></button>
+    <button class="round" id="next" aria-label="Next song"><svg viewBox="0 0 40 40"><path d="M8 8l16 12L8 32z" fill="#2b1f1e"/><rect x="27" y="8" width="5" height="24" rx="2" fill="#2b1f1e"/></svg></button>
+    <button class="round" id="loop" aria-label="Play them all" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M9 17v-2a6 6 0 0 1 6-6h14m0 0-4-4m4 4-4 4M31 23v2a6 6 0 0 1-6 6H11m0 0 4 4m-4-4 4-4" fill="none" stroke="#2b1f1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <div id="shelf"><button class="round x" id="shut" aria-label="Close the crate"><svg viewBox="0 0 40 40"><path d="M10 10l20 20M30 10 10 30" stroke="#2b1f1e" stroke-width="6" stroke-linecap="round"/></svg></button>
+    <button class="round mn" id="moonbtn" aria-label="Bedtime songs" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M27 6a15 15 0 1 0 8 22A12 12 0 0 1 27 6z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg></button>
+    <div class="in" id="shelfin"></div></div>
   <div id="curtain"></div>
 </div>
 <script>
@@ -73,7 +142,7 @@ body.portrait #gate{top:auto;right:auto;left:50%;margin-left:-66px;bottom:max(16
 "use strict";
 const Q = new URLSearchParams(location.search);   // only for the ?demo= screenshot helper
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const WW = 2752, WH = 1536, IMG = "img/", SND = "snd/", BPM = 115, BEAT = 60 / BPM;
+const WW = 2752, WH = 1536, IMG = "img/", SND = "snd/", BPM = 115; let BEAT = 60 / BPM;
 const $ = (s) => document.querySelector(s);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const eio = (u) => u * u * (3 - 2 * u), eout = (u) => 1 - (1 - u) * (1 - u);
@@ -110,7 +179,7 @@ for (const c of CAST) CLIPS[c.clip] = clip(c.clip, 3);
 const CHORUS = new Audio(SND + "chorus.mp3"); CHORUS.preload = "auto";
 function playClip(name) {
   if (muted) return; const c = CLIPS[name]; const a = c.l[c.i++ % c.l.length];
-  try { a.currentTime = 0; a.volume = .95; a.play().catch(() => {}); } catch (e) {}
+  try { a.currentTime = 0; a.volume = playing ? .45 : .95; a.play().catch(() => {}); } catch (e) {}
 }
 
 // ---------- scene ----------
@@ -143,11 +212,28 @@ function build() {
   for (const front of [false, true]) { const d = document.createElement("div"); d.className = "item"; d.innerHTML = nestSvg(front); d.style.transform = `translate(${ej.x}px,${ej.y + 28}px)`; d.style.zIndex = Math.round(ej.y) + (front ? 2 : -1); itemsEl.appendChild(d); }
   items.ej.base = 6;   // E.J. sits down in the nest a little
   // the record player's tap area
-  const rh = document.createElement("div"); rh.className = "hit"; rh.tabIndex = 0; rh.setAttribute("role", "button"); rh.setAttribute("aria-label", "Record player: play the jam");
-  rh.addEventListener("pointerdown", (e) => { e.preventDefault(); record(); }); rh.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); record(); } });
+  const rh = document.createElement("div"); rh.className = "hit"; rh.tabIndex = 0; rh.setAttribute("role", "button"); rh.setAttribute("aria-label", "Record player: open the record crate");
+  rh.addEventListener("pointerdown", (e) => { e.preventDefault(); openCrate(); }); rh.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCrate(); } });
   hitsEl.appendChild(rh); items.rec = { hit: rh };
   disc.style.transform = "translate(1867px,997px)";
+  $("#lab").style.transform = "translate(1867px,997px)";
+  // the little wooden record crate on the floor beside the record player
+  const cr = document.createElement("div"); cr.className = "item"; cr.style.transform = `translate(${CRATE_POS.x}px,${CRATE_POS.y}px)`; cr.style.zIndex = CRATE_POS.y;
+  const rc = ["#d7352a", "#3aa89a", "#f0b21c", "#e8457a", "#6cbf3c"];
+  cr.innerHTML = `<svg width="300" height="230" viewBox="0 0 300 230" style="position:absolute;left:-150px;top:-228px;overflow:visible">
+    <ellipse cx="150" cy="218" rx="140" ry="12" fill="rgba(0,0,0,.28)"/>
+    ${rc.map((c, i) => `<g transform="translate(${52 + i * 50} ${46 - (i % 2) * 12}) rotate(${(i - 2) * 6})"><circle r="42" fill="#2b1f1e" stroke="#15100d" stroke-width="3"/><circle r="26" fill="none" stroke="#4a3b33" stroke-width="2"/><circle r="15" fill="${c}"/><circle r="3" fill="#2b1f1e"/></g>`).join("")}
+    <path d="M14 78h272l-12 136H26z" fill="#a9733c" stroke="#2b1f1e" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M22 118h256M24 164h252" stroke="#6e4524" stroke-width="5"/>
+    <path d="M20 96h260M23 140h254M25 186h250" stroke="#c28a4c" stroke-width="3" opacity=".7"/>
+    <rect x="102" y="96" width="96" height="22" rx="11" fill="#3a2415" stroke="#2b1f1e" stroke-width="4"/>
+    <path d="M14 78h272" stroke="#6e4524" stroke-width="12" stroke-linecap="round"/><path d="M14 78h272" stroke="#2b1f1e" stroke-width="3" stroke-linecap="round"/></svg>`;
+  itemsEl.appendChild(cr); items.cratebox = { box: cr };
+  const ch = document.createElement("div"); ch.className = "hit"; ch.tabIndex = 0; ch.setAttribute("role", "button"); ch.setAttribute("aria-label", "Record crate");
+  ch.addEventListener("pointerdown", (e) => { e.preventDefault(); openCrate(); }); ch.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCrate(); } });
+  hitsEl.appendChild(ch); items.crate = { hit: ch };
 }
+const CRATE_POS = { x: 1850, y: 1490 };
 function show(it, p) { if (it.cur === p) return; if (it.cur) it.kids[it.cur].style.display = "none"; it.kids[p].style.display = "block"; it.cur = p; }
 
 // ---------- effects: little pictures that live for a moment, drawn from the clock ----------
@@ -213,10 +299,98 @@ function record() {
 let beatStart = -1, beatUntil = -1;
 CHORUS.addEventListener("ended", () => { beatUntil = clock; });
 
+// ---------- the record crate: songs, the turntable, the window's now-playing ----------
+const SONGS = (window.CRATE || []).filter((x) => x && x.file);
+const MUSIC = new Audio(); MUSIC.preload = "none";
+let playing = false, bedMode = false, cur = -1, loopAll = false, demoT = null, shelfBuilt = false, lastLine = -2, lineSpans = [];
+const nowEl = $("#np"), lyrEl = nowEl.querySelector(".lyr"), lyrBar = $("#lyrbar");
+const starsEl = nowEl.querySelector(".stars"); for (let i = 0; i < 12; i++) starsEl.appendChild(document.createElement("b"));
+const queue = () => SONGS.map((x, i) => i).filter((i) => (SONGS[i].kind === "bedtime") === (SONGS[cur] ? SONGS[cur].kind === "bedtime" : shelfBed));
+let shelfBed = false;
+let ac = null;
+function tick() {   // the needle's little "tick", made in code
+  if (muted) return;
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = "triangle"; o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(420, t + .05); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.22, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .07);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + .09); } catch (e) {}
+}
+function buildShelf() {
+  if (shelfBuilt) return; shelfBuilt = true; const box = $("#shelfin");
+  const groups = [["sing-along", "Sing along", '<svg viewBox="0 0 28 28"><path d="M10 22V6l12-3v16" fill="none" stroke="#f6e7c1" stroke-width="3" stroke-linejoin="round"/><circle cx="7" cy="22" r="4" fill="#f6e7c1"/><circle cx="19" cy="19" r="4" fill="#f6e7c1"/></svg>'], ["remix", "Remixes", '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#f6e7c1"/><circle cx="14" cy="14" r="4" fill="#d7352a"/></svg>'], ["bedtime", "Bedtime", '<svg viewBox="0 0 28 28"><path d="M19 3a11 11 0 1 0 6 16A9 9 0 0 1 19 3z" fill="#c9d2ff"/></svg>']];
+  for (const [kind, name, ico] of groups) {
+    const idx = SONGS.map((x, i) => i).filter((i) => SONGS[i].kind === kind); if (!idx.length) continue;
+    const sec = document.createElement("section"); sec.dataset.kind = kind;
+    sec.innerHTML = `<h2>${ico}<span>${name}</span></h2><div class="grid"></div>`; const grid = sec.querySelector(".grid");
+    idx.forEach((i, n) => {
+      const b = document.createElement("button"); b.className = "card"; b.style.setProperty("--i", n); b.dataset.i = i; b.setAttribute("aria-label", SONGS[i].title);
+      b.innerHTML = `<span class="rec"><img alt="" draggable="false" src="${SONGS[i].cover}"></span><span class="t"></span>`; b.querySelector(".t").textContent = SONGS[i].title;
+      let sx = 0, sy = 0, down = false;
+      b.addEventListener("pointerdown", (e) => { sx = e.clientX; sy = e.clientY; down = true; });
+      b.addEventListener("pointerup", (e) => { if (down && Math.hypot(e.clientX - sx, e.clientY - sy) < 12) { e.preventDefault(); play(i); } down = false; });
+      b.addEventListener("pointercancel", () => { down = false; });
+      b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); play(i); } });
+      grid.appendChild(b);
+    });
+    box.appendChild(sec);
+  }
+}
+function showShelfGroup() {
+  for (const sec of $("#shelfin").children) sec.style.display = (sec.dataset.kind === "bedtime") === shelfBed ? "" : "none";
+  $("#moonbtn").setAttribute("aria-pressed", shelfBed);
+  $("#shelf").querySelectorAll(".card").forEach((c) => c.classList.toggle("cur", playing && +c.dataset.i === cur));
+  $("#shelf").scrollTop = 0;
+}
+function openCrate(bed) { if (!SONGS.length) return; startAudio(); buildShelf(); shelfBed = !!bed; showShelfGroup(); $("#shelf").classList.add("on"); }
+function closeCrate() { $("#shelf").classList.remove("on"); }
+$("#shut").addEventListener("pointerdown", (e) => { e.preventDefault(); closeCrate(); });
+$("#moonbtn").addEventListener("pointerdown", (e) => { e.preventDefault(); shelfBed = !shelfBed; showShelfGroup(); });
+function play(i) {
+  const s = SONGS[i]; if (!s) return; startAudio(); cur = i; bedMode = s.kind === "bedtime"; playing = true;
+  BEAT = 60 / (bedMode ? 60 : clamp(s.bpm || 100, 60, 160)); beatStart = clock;
+  closeCrate(); tick();
+  MUSIC.src = s.file; MUSIC.muted = muted; MUSIC.volume = bedMode ? .8 : 1; try { MUSIC.currentTime = 0; } catch (e) {}
+  const pr = MUSIC.play(); if (pr && pr.catch) pr.catch(() => {});
+  const lab = $("#lab"), cov = `url("${s.cover}")`; lab.style.backgroundImage = cov; nowEl.querySelector(".lab").style.backgroundImage = cov;
+  nowEl.querySelector(".ttl").textContent = s.title;
+  document.body.classList.add("playing"); document.body.classList.toggle("bed", bedMode);
+  const lyr = !bedMode && s.lyrics && s.lyrics.length; document.body.classList.toggle("lyrics", !!lyr);
+  lastLine = -2; lyrEl.textContent = ""; lyrBar.textContent = "";
+  nowEl.classList.add("on"); nowEl.classList.toggle("spin", !REDUCE); disc.classList.add("on"); lab.style.opacity = 1;
+  items.moon.base = lyr ? 60 : 0;
+  // the record slides from the crate onto the turntable
+  if (!REDUCE) fx("", 150, 34, .6, (u, d) => { const k = eio(u), x = CRATE_POS.x + (1867 - CRATE_POS.x) * k, y = CRATE_POS.y - 150 + (997 - CRATE_POS.y + 150) * k - Math.sin(u * Math.PI) * 120; d.style.transform = `translate(${x}px,${y}px) scale(${1.3 - .3 * k})`; d.style.opacity = u > .9 ? (1 - u) * 10 : 1; },
+    { borderRadius: "50%", background: `#2b1f1e ${cov} center/cover`, border: "3px solid #fffbf2" });
+}
+function stop() {
+  playing = false; bedMode = false; cur = -1; try { MUSIC.pause(); } catch (e) {} demoT = null;
+  document.body.classList.remove("playing", "bed", "lyrics"); nowEl.classList.remove("on", "spin"); $("#lab").style.opacity = 0; disc.classList.remove("on");
+  items.moon.base = 0; beatUntil = clock; BEAT = 60 / BPM;
+}
+function nextSong() { const q = queue(); if (!q.length) return stop(); const n = q[(q.indexOf(cur) + 1) % q.length]; play(n); }
+MUSIC.addEventListener("ended", () => { if (loopAll) nextSong(); else stop(); });
+$("#stop").addEventListener("pointerdown", (e) => { e.preventDefault(); stop(); });
+$("#next").addEventListener("pointerdown", (e) => { e.preventDefault(); nextSong(); });
+$("#loop").addEventListener("pointerdown", (e) => { e.preventDefault(); loopAll = !loopAll; $("#loop").setAttribute("aria-pressed", loopAll); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeCrate(); });
+const songT = () => demoT !== null ? clock - demoT : MUSIC.currentTime || 0;
+function nowPlaying() {
+  const s = SONGS[cur]; if (!s) return; const t = songT();
+  const dur = MUSIC.duration > 0 && isFinite(MUSIC.duration) ? MUSIC.duration : 160, f = clamp(t / dur) * 12;
+  const st = starsEl.children; for (let i = 0; i < 12; i++) { const on = i < Math.floor(f + .001); if (st[i].classList.contains("f") !== on) st[i].classList.toggle("f", on); }
+  if (!document.body.classList.contains("lyrics")) return;
+  const L = s.lyrics; let li = -1; for (let i = 0; i < L.length; i++) { if (L[i][0][1] - .15 <= t) li = i; else break; }
+  if (li >= 0 && t > L[li][L[li].length - 1][2] + 1.6) li = -1;   // a quiet moment between lines
+  if (li !== lastLine) {
+    lastLine = li; lineSpans = [];
+    for (const el of [lyrEl, lyrBar]) { el.textContent = ""; if (li < 0) continue; L[li].forEach((w, k) => { const sp = document.createElement("span"); sp.textContent = w[0]; el.appendChild(sp); if (el === (document.body.classList.contains("portrait") ? lyrBar : lyrEl)) lineSpans.push(sp); }); }
+  }
+  if (li >= 0) { const sps = [...lyrEl.children, ...lyrBar.children]; const n = L[li].length; sps.forEach((sp, k) => { const w = L[li][k % n], on = w[1] <= t, now = on && t < w[2] + .05; sp.classList.toggle("on", on); sp.classList.toggle("now", now); }); }
+}
+
 // ---------- frame loop ----------
 function render() {
-  const beating = clock < beatUntil;
-  if (!beating && disc.classList.contains("on") && !Q.get("demo")) disc.classList.remove("on");
+  const beating = clock < beatUntil || (playing && !bedMode);
+  if (!beating && !playing && disc.classList.contains("on") && !Q.get("demo")) disc.classList.remove("on");
   for (const id in items) {
     const it = items[id]; if (!it.c) continue; const c = it.c;
     let dy = 0, rot = 0, sx = 1, sy = 1, pose = c.poses[0], glow = 0;
@@ -226,7 +400,10 @@ function render() {
       const u = clock - it.anim.t0;
       if (u >= DUR[c.dance]) { it.anim = null; it.glow = 0; } else { const d = dance(it, u); dy += d.dy; rot += d.rot; sx *= d.sx; sy *= d.sy; pose = d.pose; glow = it.glow || 0; }
     }
-    if (beating) {
+    if (playing && bedMode) {
+      const sw = Math.sin(clock * 1.1 + it.phase * .6), am = REDUCE ? .35 : 1;
+      rot += 3.6 * sw * am * (c.center ? 0 : 1); dy -= (3 + 4 * sw) * am; glow = Math.max(glow, .45 + .1 * sw);
+    } else if (beating) {
       const ph = ((clock - beatStart) / BEAT) % 1, k = Math.exp(-ph * 5), odd = Math.floor((clock - beatStart) / BEAT) % 2 ? 1 : -1;
       const amp = REDUCE ? .4 : 1; dy -= 22 * k * amp * (c.center ? .3 : 1); sy *= 1 + .05 * k * amp; rot += odd * 3.2 * k * amp * (c.center ? 0 : 1);
       glow = Math.max(glow, .35 + .25 * k);
@@ -236,6 +413,7 @@ function render() {
     it.box.style.transform = `translate(${c.x}px,${c.y + base + dy}px) rotate(${rot.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`;
     if (c.center) it.box.style.filter = `drop-shadow(0 0 ${6 + glow * 40}px rgba(255,240,170,${.35 + glow * .55}))`;
   }
+  if (playing) nowPlaying();
   for (let i = effects.length - 1; i >= 0; i--) {
     const e = effects[i], u = (clock - e.t0) / e.life;
     if (u < 0) { if (e.d.parentNode) e.d.style.opacity = 0; continue; }
@@ -250,7 +428,7 @@ function frame(ms) { const now = ms / 1000, dt = Math.min(.05, last ? now - last
 // ---------- audio start / mute / home / gate ----------
 function startAudio() { started = true; }
 $("#mute").addEventListener("pointerdown", (e) => {
-  e.preventDefault(); muted = !muted; CHORUS.muted = muted;
+  e.preventDefault(); muted = !muted; CHORUS.muted = muted; MUSIC.muted = muted;
   $("#m-on").style.display = muted ? "none" : ""; $("#m-off").style.display = muted ? "" : "none"; $("#mute").setAttribute("aria-pressed", muted); $("#mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on");
 });
 $("#home").addEventListener("pointerdown", (e) => { e.preventDefault(); $("#curtain").style.opacity = 1; setTimeout(() => location.assign("/nest/play/"), 250); });
@@ -287,6 +465,7 @@ function layout() {
     const w = Math.max(it.w * .8, minW), h = Math.max(c.h * .9, minW), cy = c.center ? c.y : c.y - c.h * .5;
     Object.assign(it.hit.style, { width: w + "px", height: h + "px", transform: `translate(${c.x - w / 2}px,${cy - h / 2}px)` });
   }
+  { const w = Math.max(300, minW), h = Math.max(230, minW); Object.assign(items.crate.hit.style, { width: w + "px", height: h + "px", transform: `translate(${CRATE_POS.x - w / 2}px,${CRATE_POS.y - 115 - h / 2}px)` }); }
   const rw = Math.max(REC.w, minW), rh = Math.max(REC.h, minW);
   Object.assign(items.rec.hit.style, { width: rw + "px", height: rh + "px", transform: `translate(${REC.x + REC.w / 2 - rw / 2}px,${REC.y + REC.h / 2 - rh / 2}px)` });
 }
@@ -298,9 +477,9 @@ function buildPads() {
     const im = document.createElement("img"); im.src = IMG + c.poses[0] + ".webp"; im.alt = ""; im.draggable = false; b.appendChild(im);
     b.addEventListener("pointerdown", (e) => { e.preventDefault(); tap(id); }); pads.appendChild(b);
   }
-  const r = document.createElement("button"); r.className = "pad rec"; r.setAttribute("aria-label", "Play the jam");
+  const r = document.createElement("button"); r.className = "pad rec"; r.setAttribute("aria-label", "Open the record crate");
   r.innerHTML = `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#2b1f1e"/><circle cx="20" cy="20" r="12" fill="none" stroke="#6b5444" stroke-width="1.5"/><circle cx="20" cy="20" r="6" fill="#f0b21c"/><circle cx="20" cy="20" r="1.5" fill="#2b1f1e"/></svg>`;
-  r.addEventListener("pointerdown", (e) => { e.preventDefault(); record(); }); pads.appendChild(r);
+  r.addEventListener("pointerdown", (e) => { e.preventDefault(); openCrate(); }); pads.appendChild(r);
 }
 
 loaded.then(() => {
@@ -311,7 +490,10 @@ loaded.then(() => {
     const t = parseFloat(Q.get("t") || "0");
     startAudio = () => {}; const noPlay = () => {}; CHORUS.play = () => Promise.resolve();
     for (const k in CLIPS) CLIPS[k].l.forEach((a) => { a.play = () => Promise.resolve(); });
-    if (d === "all") PAD_ORDER.forEach((id) => tap(id)); else if (d === "beat") { record(); } else if (items[d]) tap(d);
+    MUSIC.play = () => Promise.resolve(); if (Q.get("n") !== null && (d === "play" || d === "bed")) { play(+Q.get("n")); demoT = 0; }
+    if (d === "crate" || d === "moon") { openCrate(d === "moon"); $("#shelf").querySelectorAll(".card").forEach((c) => { c.style.animation = "none"; }); }
+    if (d === "play" || d === "bed") { demoT = clock; }
+    else if (d === "all") PAD_ORDER.forEach((id) => tap(id)); else if (d === "beat") { record(); } else if (items[d]) tap(d);
     const n = Math.round(t * 60); for (let i = 0; i < n; i++) { clock += 1 / 60; render(); }
     render(); if (!Q.get("run")) frozen = true;
   }
