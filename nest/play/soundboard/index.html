@@ -91,6 +91,8 @@ body.portrait #ctl{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 62px)}
 #shelf .in{max-width:1100px;margin:0 auto}
 #shelf h2{margin:22px 4px 10px;font:700 18px/1 "Andika",sans-serif;color:#f6e7c1;display:flex;align-items:center;gap:10px}
 #shelf h2 svg{width:28px;height:28px}
+#shelf section[data-kind="bedtime"]{margin-top:26px;padding:4px 14px 16px;border-radius:24px;background:linear-gradient(#1d2a5c,#2c3c7a);border:4px solid #f0b21c}
+#shelf section[data-kind="bedtime"] h2{color:#ffe7a3;font-size:22px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px}
 .card{display:block;border:0;background:none;padding:0;font:inherit;color:#fffbf2;cursor:pointer;text-align:center;touch-action:pan-y;animation:fan .5s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--i)*45ms)}
 .card .rec{position:relative;display:block;border-radius:14px;border:4px solid #fffbf2;box-shadow:0 6px 0 rgba(0,0,0,.55);overflow:hidden;background:#2b1f1e;aspect-ratio:16/9}
@@ -135,7 +137,7 @@ body.land #gate{top:auto;right:max(10px,env(safe-area-inset-right));bottom:max(1
     <button class="round" id="shuffle" aria-label="Shuffle the songs" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 13h6c6 0 10 14 16 14h6M6 27h6c2.4 0 4.4-2.2 6.2-5M22 18c1.8-2.8 3.8-5 6-5h6m0 0-4-4m4 4-4 4M34 27l-4-4m4 4-4 4" fill="none" stroke="#2b1f1e" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
   <div id="shelf"><button class="round x" id="shut" aria-label="Close the crate"><svg viewBox="0 0 40 40"><path d="M10 10l20 20M30 10 10 30" stroke="#2b1f1e" stroke-width="6" stroke-linecap="round"/></svg></button>
-    <button class="round mn" id="moonbtn" aria-label="Bedtime songs" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M27 6a15 15 0 1 0 8 22A12 12 0 0 1 27 6z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg></button>
+    <button class="round mn" id="moonbtn" aria-label="Jump to the bedtime songs" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M27 6a15 15 0 1 0 8 22A12 12 0 0 1 27 6z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg></button>
     <div class="in" id="shelfin"></div></div>
   <div id="curtain"></div>
 </div>
@@ -320,7 +322,7 @@ function tick() {   // the needle's little "tick", made in code
 }
 function buildShelf() {
   if (shelfBuilt) return; shelfBuilt = true; const box = $("#shelfin");
-  const groups = [["sing-along", "Sing along", '<svg viewBox="0 0 28 28"><path d="M10 22V6l12-3v16" fill="none" stroke="#f6e7c1" stroke-width="3" stroke-linejoin="round"/><circle cx="7" cy="22" r="4" fill="#f6e7c1"/><circle cx="19" cy="19" r="4" fill="#f6e7c1"/></svg>'], ["remix", "Remixes", '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#f6e7c1"/><circle cx="14" cy="14" r="4" fill="#d7352a"/></svg>'], ["bedtime", "Bedtime", '<svg viewBox="0 0 28 28"><path d="M19 3a11 11 0 1 0 6 16A9 9 0 0 1 19 3z" fill="#c9d2ff"/></svg>']];
+  const groups = [["sing-along", "Sing along", '<svg viewBox="0 0 28 28"><path d="M10 22V6l12-3v16" fill="none" stroke="#f6e7c1" stroke-width="3" stroke-linejoin="round"/><circle cx="7" cy="22" r="4" fill="#f6e7c1"/><circle cx="19" cy="19" r="4" fill="#f6e7c1"/></svg>'], ["remix", "Remixes", '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#f6e7c1"/><circle cx="14" cy="14" r="4" fill="#d7352a"/></svg>'], ["bedtime", "Bedtime songs", '<svg viewBox="0 0 28 28"><path d="M19 3a11 11 0 1 0 6 16A9 9 0 0 1 19 3z" fill="#c9d2ff"/></svg>']];
   for (const [kind, name, ico] of groups) {
     const idx = SONGS.map((x, i) => i).filter((i) => SONGS[i].kind === kind); if (!idx.length) continue;
     const sec = document.createElement("section"); sec.dataset.kind = kind;
@@ -339,15 +341,16 @@ function buildShelf() {
   }
 }
 function showShelfGroup() {
-  for (const sec of $("#shelfin").children) sec.style.display = (sec.dataset.kind === "bedtime") === shelfBed ? "" : "none";
-  $("#moonbtn").setAttribute("aria-pressed", shelfBed);
+  for (const sec of $("#shelfin").children) sec.style.display = "";
+  $("#moonbtn").setAttribute("aria-pressed", false);
   $("#shelf").querySelectorAll(".card").forEach((c) => c.classList.toggle("cur", playing && +c.dataset.i === cur));
   $("#shelf").scrollTop = 0;
+  if (shelfBed) { const b = $("#shelfin").querySelector('section[data-kind="bedtime"]'); if (b) requestAnimationFrame(() => { $("#shelf").scrollTop = b.offsetTop - 70; }); }
 }
-function openCrate(bed) { if (!SONGS.length) return; startAudio(); buildShelf(); shelfBed = !!bed; showShelfGroup(); $("#shelf").classList.add("on"); }
+function openCrate(bed) { if (!SONGS.length) return; startAudio(); buildShelf(); shelfBed = !!bed; $("#shelf").classList.add("on"); showShelfGroup(); }
 function closeCrate() { $("#shelf").classList.remove("on"); }
 $("#shut").addEventListener("pointerdown", (e) => { e.preventDefault(); closeCrate(); });
-$("#moonbtn").addEventListener("pointerdown", (e) => { e.preventDefault(); shelfBed = !shelfBed; showShelfGroup(); });
+$("#moonbtn").addEventListener("pointerdown", (e) => { e.preventDefault(); shelfBed = true; showShelfGroup(); });
 function play(i) {
   const s = SONGS[i]; if (!s) return; startAudio(); cur = i; lastSong = i; paused = false; bedMode = s.kind === "bedtime"; playing = true; document.body.classList.add("hasplayed"); ppIcon();
   BEAT = 60 / (bedMode ? 60 : clamp(s.bpm || 100, 60, 160)); beatStart = clock;
