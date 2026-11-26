@@ -95,7 +95,7 @@ const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const WW = 2752, WH = 1536, IMG = "img/";
 const CX = 1600, FEET = 578, GROUND = 1085, DIR = -1, DF = true, FS = 2.1;   // Crumb stands at the limb's outer end (bark top y 565-580 at x 1530-1670, near the trunk) facing LEFT; flights go left over the meadow           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
 const COLS = ["", "-y", "-b", "-sr", "-sg", "-st"];       // red, yellow, blue, red/yellow swirl, green/yellow swirl, stars and stripes
-const HOLD = ["", "-y", "-b", "", "-y", "-b"];              // the colour of the plane in Crumb's paw: the swirls borrow the closest plain one (red, yellow, blue)
+const HOLD = COLS;  // the plane in Crumb's (and Bucky's) paw matches the paint job: the swirl and star versions are recoloured from the red ones (2026-11-26)
 const HANG_X = [87.5, 87.5, 87, 81.8, 72.5, 79.5];         // where the stem's tip is across each hanging sprite, in pixels
 const $ = (s) => document.querySelector(s);
 const world = $("#world"), body = document.body;
@@ -111,7 +111,7 @@ const arcUp = (p, q, u, h) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u) - h * 4 
 // ---------- assets (all from this site; preloaded so it works offline once loaded) ----------
 const names = ["crumb-catch", "crumb-go", "crumb-watch", "bucky-sit", "bucky-leap", "bucky-wave", "ej-sleep", "ej-lookup", "ej-cheer", "jet-up", "jet-oh", "jet-idle", "p-leaf1", "p-leaf2", "p-leaf3", "p-leaf4", "dot-idle", "dot-cheer"];
 for (const g of ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"]) for (const c of COLS) names.push("glider-" + g + c);
-for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle", "bucky-hold", "bucky-offer"]) for (const c of HOLD.slice(0, 3)) names.push(g + c);
+for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle", "bucky-hold", "bucky-offer"]) for (const c of COLS) names.push(g + c);
 for (const c of COLS) names.push("glider-hang" + c);
 const nat = {};
 const loadAll = Promise.all(names.map((n) => new Promise((res) => {
@@ -214,7 +214,7 @@ function leafBurst(x, y, n, power = 1) {
 // ---------- the actors ----------
 const LB = $("#L-back"), LC = $("#L-crumb"), LP = $("#L-plane"), LF = $("#L-front"), bubble = $("#bubble");
 let crumb, planes = [], plane, colour = 0;
-const crumbNames = ["crumb-catch", "crumb-go", "crumb-watch"]; for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle"]) for (const c of HOLD.slice(0, 3)) crumbNames.push(g + c);
+const crumbNames = ["crumb-catch", "crumb-go", "crumb-watch"]; for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle"]) for (const c of COLS) crumbNames.push(g + c);
 const GL = ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"];
 let hopY = 0, rock = 0, crumbSquash = 1;
 function renderCrumb(now) {
