@@ -82,7 +82,7 @@ body.lyrics #np .lyr{display:block}
 body.portrait.lyrics #np .lyr{display:none}
 #crate{position:absolute;left:0;top:0;width:260px;height:200px;margin:-200px 0 0 -130px}
 #ctl{position:absolute;z-index:7;left:50%;bottom:max(14px,env(safe-area-inset-bottom));display:none;gap:16px;transform:translateX(-50%)}
-body.playing #ctl{display:flex}
+body.playing #ctl,body.hasplayed #ctl{display:flex}
 body.portrait #ctl{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 62px)}
 #ctl .round{position:relative;width:76px;height:76px}
 #ctl .round[aria-pressed=true]{background:#ffd257}
@@ -128,6 +128,7 @@ body.land #gate{top:auto;right:max(10px,env(safe-area-inset-right));bottom:max(1
   <button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
   <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to go back to the Fable Jam Nest page."><i></i><span>Grown-ups: press and hold to leave</span></button>
   <div id="ctl">
+    <button class="round" id="pp" aria-label="Pause"><svg viewBox="0 0 40 40"><g id="pp-pause"><rect x="10" y="8" width="7" height="24" rx="2" fill="#2b1f1e"/><rect x="23" y="8" width="7" height="24" rx="2" fill="#2b1f1e"/></g><path id="pp-play" d="M12 7l21 13-21 13z" fill="#3aa58e" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round" style="display:none"/></svg></button>
     <button class="round" id="stop" aria-label="Stop the music"><svg viewBox="0 0 40 40"><rect x="9" y="9" width="22" height="22" rx="4" fill="#d7352a" stroke="#2b1f1e" stroke-width="3"/></svg></button>
     <button class="round" id="next" aria-label="Next song"><svg viewBox="0 0 40 40"><path d="M8 8l16 12L8 32z" fill="#2b1f1e"/><rect x="27" y="8" width="5" height="24" rx="2" fill="#2b1f1e"/></svg></button>
     <button class="round" id="loop" aria-label="Play them all" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M9 17v-2a6 6 0 0 1 6-6h14m0 0-4-4m4 4-4 4M31 23v2a6 6 0 0 1-6 6H11m0 0 4 4m-4-4 4-4" fill="none" stroke="#2b1f1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -303,6 +304,7 @@ CHORUS.addEventListener("ended", () => { beatUntil = clock; });
 // ---------- the record crate: songs, the turntable, the window's now-playing ----------
 const SONGS = (window.CRATE || []).filter((x) => x && x.file);
 const MUSIC = new Audio(); MUSIC.preload = "none";
+let paused = false, lastSong = -1; // pause keeps the song where it is; stop remembers it so play starts it again
 let shuffle = false, bag = []; // shuffle: every song once, in a random order, then a new order (Mike, 2026-11-26)
 let playing = false, bedMode = false, cur = -1, loopAll = false, demoT = null, shelfBuilt = false, lastLine = -2, lineSpans = [];
 const nowEl = $("#np"), lyrEl = nowEl.querySelector(".lyr"), lyrBar = $("#lyrbar");
@@ -347,7 +349,7 @@ function closeCrate() { $("#shelf").classList.remove("on"); }
 $("#shut").addEventListener("pointerdown", (e) => { e.preventDefault(); closeCrate(); });
 $("#moonbtn").addEventListener("pointerdown", (e) => { e.preventDefault(); shelfBed = !shelfBed; showShelfGroup(); });
 function play(i) {
-  const s = SONGS[i]; if (!s) return; startAudio(); cur = i; bedMode = s.kind === "bedtime"; playing = true;
+  const s = SONGS[i]; if (!s) return; startAudio(); cur = i; lastSong = i; paused = false; bedMode = s.kind === "bedtime"; playing = true; document.body.classList.add("hasplayed"); ppIcon();
   BEAT = 60 / (bedMode ? 60 : clamp(s.bpm || 100, 60, 160)); beatStart = clock;
   closeCrate(); tick();
   MUSIC.src = s.file; MUSIC.muted = muted; MUSIC.volume = bedMode ? .8 : 1; try { MUSIC.currentTime = 0; } catch (e) {}
@@ -364,10 +366,14 @@ function play(i) {
     { borderRadius: "50%", background: `#2b1f1e ${cov} center/cover`, border: "3px solid #fffbf2" });
 }
 function stop() {
-  playing = false; bedMode = false; cur = -1; try { MUSIC.pause(); } catch (e) {} demoT = null;
+  if (cur >= 0) lastSong = cur; paused = false; playing = false; bedMode = false; cur = -1; try { MUSIC.pause(); } catch (e) {} demoT = null; ppIcon();
   document.body.classList.remove("playing", "bed", "lyrics"); nowEl.classList.remove("on", "spin"); $("#lab").style.opacity = 0; disc.classList.remove("on");
   items.moon.base = 0; beatUntil = clock; BEAT = 60 / BPM;
 }
+function ppIcon() { const on = playing; $("#pp-pause").style.display = on ? "" : "none"; $("#pp-play").style.display = on ? "none" : ""; $("#pp").setAttribute("aria-label", on ? "Pause" : "Play"); }
+function pauseSong() { if (!playing) return; try { MUSIC.pause(); } catch (e) {} playing = false; paused = true; nowEl.classList.remove("spin"); beatUntil = clock; ppIcon(); }
+function resumeSong() { if (!paused || cur < 0) return; const pr = MUSIC.play(); if (pr && pr.catch) pr.catch(() => {}); playing = true; paused = false; beatStart = clock; nowEl.classList.toggle("spin", !REDUCE); ppIcon(); }
+$("#pp").addEventListener("pointerdown", (e) => { e.preventDefault(); startAudio(); if (playing) pauseSong(); else if (paused) resumeSong(); else { const q = queue(); play(lastSong >= 0 ? lastSong : q[0]); } });
 function nextSong() {
   const q = queue(); if (!q.length) return stop();
   if (shuffle && q.length > 1) {
