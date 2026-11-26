@@ -44,6 +44,12 @@ h1{margin:0 0 6px;font-size:clamp(40px,8vw,76px);line-height:1;color:var(--paper
 .play{display:flex;align-items:center;gap:16px;max-width:560px;margin:30px auto 0;padding:14px 22px;background:#bfe1f3;border:5px solid var(--ink);border-radius:26px;text-decoration:none;color:var(--ink);box-shadow:0 6px 0 var(--ink);text-align:left}.play:active{transform:translateY(3px);box-shadow:0 3px 0 var(--ink)}.play img{width:96px;height:auto;flex:none}.play b{display:block;font-size:clamp(24px,4vw,32px);line-height:1.1}.play span{font-size:17px;color:#2b4a5a}
 .grown{max-width:720px;margin:44px auto 0;padding:22px 26px;background:var(--paper);border:4px solid var(--ink);border-radius:22px;text-align:left;font-size:18px;line-height:1.5}
 .grown h2{margin:0 0 6px;font-size:24px}
+.sched{margin:16px 0 0;padding:0;list-style:none}
+.sched li{display:flex;gap:12px;align-items:baseline;padding:7px 0;border-top:2px dashed rgba(43,31,30,.18)}
+.sched li:first-child{border-top:0}
+.sched time{flex:0 0 128px;font-weight:700;color:#d7352a}
+.sched .out{margin-left:auto;font-size:14px;font-weight:700;background:#3aa58e;color:#fff;border-radius:999px;padding:1px 10px;white-space:nowrap}
+
 footer{margin:34px 0 10px;font-size:15px;color:#6b5444}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
@@ -68,6 +74,22 @@ footer{margin:34px 0 10px;font-size:15px;color:#6b5444}
   <a class="play" href="/nest/play/airplanes/"><img src="/nest/play/airplanes/img/glider-level.webp" alt=""><div><b>Play: Launch the Airplanes!</b><span>Ready, set, go! Help Crumb fly his little plane. Where will it land?</span></div></a>
   <a class="play" href="/nest/play/soundboard/" style="background:#f6d6a8"><img src="/nest/play/soundboard/img/moon.webp" alt=""><div><b>Play: the Jam Nest Sound Board!</b><span>Tap the friends to hear their sounds, then play the record and everybody dances.</span></div></a>
 
+  <a class="play" href="/nest/characters/" style="background:#d9c8f0"><img src="/nest/characters/img/jet-idle.webp" alt=""><div><b>Meet the characters!</b><span>Tap a friend and Jet tells you who they are.</span></div></a>
+
+  <section class="grown" id="schedule">
+    <h2>Season 1: new episodes Thursdays at 6 pm Eastern</h2>
+    Each week brings one episode's set: its story, its sing-along, its remix and the story behind the fable. Around dinnertime, which makes it a nice moment to share one thing you're thankful for.
+    <ul class="sched">
+      <li data-day="2026-11-26"><time datetime="2026-11-26">Thanksgiving</time><span>Start here: Where We Came From, Meet Jet &amp; Crumb, and Season 1: The Movie (all six stories)</span></li>
+      <li data-day="2026-12-03"><time datetime="2026-12-03">Dec 3</time><span>Will You Be My Friend?</span></li>
+      <li data-day="2026-12-10"><time datetime="2026-12-10">Dec 10</time><span>The Crow and the Pitcher</span></li>
+      <li data-day="2026-12-17"><time datetime="2026-12-17">Dec 17</time><span>The Lion and the Mouse</span></li>
+      <li data-day="2026-12-24"><time datetime="2026-12-24">Dec 24</time><span>Belling the Cat</span></li>
+      <li data-day="2026-12-31"><time datetime="2026-12-31">Dec 31</time><span>Little Moon's Coats (a bedtime story)</span></li>
+      <li data-day="2027-01-07"><time datetime="2027-01-07">Jan 7</time><span>Thank You, Tree!</span></li>
+      <li data-day="2027-01-14"><time datetime="2027-01-14">Jan 14</time><span>The Season 1 Roll Call: Fable Jam-a-Jam-O!</span></li>
+    </ul>
+  </section>
   <section class="grown">
     <h2>For grown-ups</h2>
     Fable Jam Nest is a new channel of old fables, from Aesop and beyond, retold in our own words: every story says its lesson out loud, the peril stays gentle, and every video ends in a good place. Soon this site will have our videos, the old books our fables come from, and how we make them. Our little play corner for small hands is open: its first game collects nothing at all (no cookies, no data, nothing from other companies), and leaving it takes a grown-up's press-and-hold.
@@ -100,6 +122,11 @@ document.getElementById("drop").addEventListener("click", pebble);
 document.getElementById("jet").addEventListener("click", pebble);
 const crumb = document.getElementById("crumb"), ci = crumb.querySelector("img");
 crumb.addEventListener("click", () => { squeak(); hop(crumb); ci.src = "/img/crumb-cheer.webp"; clearTimeout(crumb._t); crumb._t = setTimeout(() => (ci.src = "/img/crumb.webp"), 900); });
+
+// the schedule: mark each episode that is already out (6 pm Eastern on its day; worked out on this device, nothing sent anywhere)
+for (const li of document.querySelectorAll(".sched li")) {
+  if (Date.now() >= Date.parse(li.dataset.day + "T18:00:00-05:00")) li.insertAdjacentHTML("beforeend", '<span class="out">Out now!</span>');
+}
 </script>
 </body>
 </html>

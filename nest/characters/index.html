@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meet the Characters · Fable Jam Nest</title>
+<meta name="description" content="Meet Jet, Crumb and all their friends in the Jam Nest. Tap a friend and Jet tells you who they are. No ads, no sign-ups and nothing collected.">
+<meta name="theme-color" content="#3a2415">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
+:root{--ink:#2b1f1e;--paper:#fffbf2;--gold:#f0b21c;--red:#d7352a;--teal:#3aa89a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:#3a2415;color:var(--ink);font-family:"Andika",system-ui,sans-serif}
+body{background:#2b1a10 url(../play/soundboard/img/bg.webp) center/cover fixed;min-height:100vh}
+body::before{content:"";position:fixed;inset:0;background:linear-gradient(rgba(30,16,8,.55),rgba(30,16,8,.75));pointer-events:none}
+main{position:relative;max-width:1000px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 16px 90px;text-align:center}
+h1{margin:6px 90px 4px;font-size:clamp(30px,6vw,56px);line-height:1.05;color:var(--paper);-webkit-text-stroke:.12em var(--ink);paint-order:stroke fill;text-shadow:0 5px 0 rgba(20,10,0,.3)}
+.sub{margin:0 auto 20px;color:#f6e7c1;font-size:clamp(16px,2.4vw,21px)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 12px;justify-items:center}
+.pick{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:none;padding:0;font:inherit;cursor:pointer;color:#fffbf2;touch-action:manipulation}
+.pick .pic{width:clamp(92px,21vw,170px);height:clamp(92px,21vw,170px);border-radius:50%;border:5px solid var(--ink);background:var(--paper) ;box-shadow:0 6px 0 var(--ink);display:flex;align-items:center;justify-content:center;padding:8%;transition:transform .15s}
+.pick.nightbg .pic{background:#c9d2f0}
+.pick img{max-width:100%;max-height:100%;display:block;pointer-events:none}
+.pick:active .pic{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.pick:focus-visible .pic{outline:5px solid #fff;outline-offset:3px}
+.pick b{font-size:clamp(16px,2.8vw,24px);text-shadow:0 2px 0 var(--ink),0 0 6px var(--ink)}
+.round{position:fixed;z-index:6;width:64px;height:64px;border-radius:50%;border:5px solid var(--ink);background:var(--paper);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 5px 0 var(--ink);touch-action:manipulation;font:inherit;color:var(--ink)}
+.round svg{width:60%;height:60%}
+.round:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+#home{left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top))}
+#mute{right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top))}
+#veil{position:fixed;inset:0;z-index:10;background:rgba(18,10,4,.78);display:none;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
+#veil.on{display:flex}
+#card{position:relative;width:min(960px,100%);max-height:100%;overflow-y:auto;overflow-x:hidden;background:var(--paper);border:6px solid var(--ink);border-radius:30px;box-shadow:0 8px 0 rgba(0,0,0,.5);padding:22px 80px 24px;display:grid;grid-template-columns:minmax(0,40%) 1fr;gap:6px 24px;text-align:left;animation:pop .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{opacity:0;transform:scale(.85) translateY(20px)}}
+#cpic{grid-row:1/4;align-self:center;aspect-ratio:1;border-radius:50%;background:#fbe7bd;border:5px solid var(--ink);display:flex;align-items:center;justify-content:center;padding:9%;max-height:min(60vh,380px);width:100%;max-width:380px;justify-self:center}
+#cpic.night{background:#c9d2f0}
+#cpic img{max-width:100%;max-height:100%}
+#cname{margin:0;font-size:clamp(34px,6vw,58px);line-height:1}
+#ctext{margin:8px 0;font-size:clamp(18px,2.6vw,25px);line-height:1.4}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 10px}
+.big{font:700 clamp(18px,2.6vw,24px) "Andika",sans-serif;padding:8px 16px;min-height:54px;border-radius:999px;border:4px solid var(--ink);background:var(--teal);color:#fff;cursor:pointer;box-shadow:0 5px 0 var(--ink);display:flex;align-items:center;gap:10px;touch-action:manipulation}
+.big.alt{background:var(--gold);color:var(--ink)}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.big svg{width:24px;height:24px}
+.small{margin:2px 0;font-size:16px;color:#5a4636;line-height:1.35}
+.small b{color:var(--ink)}
+.nav{position:absolute;top:50%;width:56px;height:56px;margin-top:-28px;z-index:2}
+#prev{left:10px}#next{right:10px}
+#shut{position:absolute;right:10px;top:10px;width:56px;height:56px;z-index:3;background:var(--paper)}
+#veil .round{position:absolute}
+@media (max-width:760px),(orientation:portrait){
+.grid{grid-template-columns:repeat(3,1fr)}
+#card{grid-template-columns:1fr;padding:60px 16px 18px;text-align:center}
+#cpic{grid-row:auto;max-height:34vh;width:auto;height:34vh;max-width:70%}
+.btns{justify-content:center}
+#prev{left:6px}#next{right:6px}#shut{right:6px;top:6px}
+.nav{top:calc(17vh + 90px)}
+}
+@media (orientation:landscape) and (max-height:520px){
+.grid{grid-template-columns:repeat(6,1fr)}
+#card{grid-template-columns:minmax(0,32%) 1fr;padding:12px 76px;gap:4px 18px}
+#cpic{max-height:70vh;text-align:left}
+#cname{font-size:30px}#ctext{font-size:17px;margin:4px 0}.big{min-height:46px;padding:6px 16px;font-size:17px}
+.nav{top:50%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<button class="round" id="home" aria-label="Back to the Jam Nest"><svg viewBox="0 0 40 40"><path d="M5 20 20 6l15 14" fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v15h20V19" fill="#f0b21c" stroke="#2b1f1e" stroke-width="4" stroke-linejoin="round"/></svg></button>
+<button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
+<main>
+  <h1>Meet the characters</h1>
+  <p class="sub">Tap a friend and Jet tells you who they are.</p>
+  <div class="grid" id="grid"></div>
+</main>
+<div id="veil" role="dialog" aria-modal="true" aria-labelledby="cname">
+  <div id="card">
+    <button class="round nav" id="prev" aria-label="Previous friend"><svg viewBox="0 0 40 40"><path d="M26 7 12 20l14 13" fill="none" stroke="#2b1f1e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="round nav" id="next" aria-label="Next friend"><svg viewBox="0 0 40 40"><path d="M14 7l14 13-14 13" fill="none" stroke="#2b1f1e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="round" id="shut" aria-label="Close the card"><svg viewBox="0 0 40 40"><path d="M10 10l20 20M30 10 10 30" stroke="#2b1f1e" stroke-width="6" stroke-linecap="round"/></svg></button>
+    <div id="cpic"><img id="cimg" alt="" draggable="false"></div>
+    <div><h2 id="cname"></h2></div>
+    <div><p id="ctext"></p>
+      <div class="btns"><button class="big" id="tell"><svg viewBox="0 0 24 24"><path d="M5 3l16 9-16 9z" fill="#fff" stroke="#2b1f1e" stroke-width="2" stroke-linejoin="round"/></svg>Jet tells you</button><button class="big alt" id="own">Their sound</button></div>
+      <p class="small"><b>Family &amp; friends:</b> <span id="cfam"></span></p>
+      <p class="small"><b>Find them in:</b> <span id="cfind"></span></p></div>
+  </div>
+</div>
+<script>
+(() => {
+"use strict";
+const CAST = [
+ {
+  "id": "jet",
+  "name": "Jet",
+  "img": "jet-idle",
+  "snd": null,
+  "fam": "Crumb, Gee-Gee (her grandma)",
+  "find": "All of Season 1 · Will You Be My Friend?",
+  "text": "That's me, Jet! I'm a DJ crow, and the Jam Nest is my home. Every time I drop a pebble, plink, I'm saying hello to my grandma, Gee-Gee. And I keep a Word Jar, for all my favourite words."
+ },
+ {
+  "id": "crumb",
+  "name": "Crumb",
+  "img": "crumb-go",
+  "snd": "squeak",
+  "fam": "Jet (best friend), Pops (his grandpa)",
+  "find": "All of Season 1 · Will You Be My Friend?",
+  "text": "This is Crumb, my best friend. He's a little mouse, but he's very brave, and very, very curious. When we met, he shared his crumbs with me… and that's how he got his name!"
+ },
+ {
+  "id": "gee-gee",
+  "name": "Gee-Gee",
+  "img": "gg-idle",
+  "snd": "think",
+  "fam": "Jet (her granddaughter)",
+  "find": "The Crow and the Pitcher",
+  "text": "This is my grandma, Gee-Gee. Long ago, she was very thirsty, and the water was too low to reach. So she stopped, and she thought… and she dropped in pebbles, one by one, until she could drink."
+ },
+ {
+  "id": "pops",
+  "name": "Pops",
+  "img": "pops-idle",
+  "snd": "pop",
+  "fam": "Crumb (his grandson), Moe",
+  "find": "The Lion and the Mouse",
+  "text": "This is Pops, Crumb's grandpa. When Moe the lion got caught in an old net, little Pops gnawed and gnawed, snap, snap, snap… and then, POP! That's how he got his name."
+ },
+ {
+  "id": "moe",
+  "name": "Moe",
+  "img": "moe-idle",
+  "snd": "he",
+  "fam": "Pops (the mouse he was kind to)",
+  "find": "The Lion and the Mouse",
+  "text": "This is Moe, a great big, gentle lion. He has the biggest laugh in the grassland. Once he was kind to a little mouse, and that little mouse came back and set him free."
+ },
+ {
+  "id": "jammo",
+  "name": "Jammo",
+  "img": "jammo-idle",
+  "snd": "jingle",
+  "fam": "The mice next door",
+  "find": "Belling the Cat",
+  "text": "This is Jammo, the friendly cat next door. She's so big and soft and quiet, she kept surprising the mice. So they all worked together, and gave her a bell. And she loves it!"
+ },
+ {
+  "id": "pearl",
+  "name": "Pearl",
+  "img": "pearl-idle",
+  "snd": "coo",
+  "fam": "Jet, her flock of doves, E.J.",
+  "find": "Thank You, Tree!",
+  "text": "This is Pearl, my dove friend. When her doves got caught in a net, she said, let's all flap together! And up they went. She flies with me to the big plane tree."
+ },
+ {
+  "id": "dot",
+  "name": "Dot",
+  "img": "dot-idle",
+  "snd": "tiptap",
+  "fam": "Jet, Pearl, E.J.",
+  "find": "Thank You, Tree!",
+  "text": "This is Dot, a tiny ant who lives by the brook. She holds a leaf for an umbrella, and she taught me something important: look up, look around, and say thank you!"
+ },
+ {
+  "id": "ej",
+  "name": "E.J.",
+  "img": "ej-wave",
+  "snd": "peep",
+  "fam": "Jet, Pearl, Dot",
+  "find": "Thank You, Tree!",
+  "text": "This is E.J., a little bird. His home is a cozy nest, way up in the big plane tree. When I flew by, he popped up and waved hello!"
+ },
+ {
+  "id": "little-moon",
+  "name": "Little Moon",
+  "img": "moon",
+  "snd": "shine",
+  "fam": "Mother Night (her mama)",
+  "find": "Little Moon's Coats · Still My Moon",
+  "text": "This is Little Moon. Some nights she's thin, some nights she's round, and she's always changing. But in every shape, she's loved."
+ },
+ {
+  "id": "mother-night",
+  "name": "Mother Night",
+  "img": "mother-night",
+  "snd": null,
+  "fam": "Little Moon (her daughter)",
+  "find": "Little Moon's Coats · Still My Moon",
+  "text": "This is Mother Night, Little Moon's mama. She knitted coat after coat, and then she wrapped her Little Moon in the whole starry sky, a coat that fits every shape."
+ },
+ {
+  "id": "bucky",
+  "name": "Bucky",
+  "img": "bucky",
+  "snd": null,
+  "fam": "Crumb, the plane tree",
+  "find": "Play: Launch the Airplanes!",
+  "text": "And this is Bucky, a cheeky red squirrel who lives in the plane tree. She's named for the buckeye, Ohio's own tree. When Crumb's little planes fly by, sometimes Bucky catches them!"
+ }
+];
+const $ = (s) => document.querySelector(s);
+const IMG = "img/", SND = "snd/", OWN = "../play/soundboard/snd/";
+let muted = false, started = false, cur = -1, audio = null;
+const grid = $("#grid");
+CAST.forEach((c, i) => {
+  const b = document.createElement("button"); b.className = "pick" + (c.id === "mother-night" ? " nightbg" : ""); b.setAttribute("aria-label", "Meet " + c.name);
+  b.innerHTML = '<span class="pic"><img alt=""></span><b></b>'; b.querySelector("img").src = IMG + c.img + ".webp"; b.querySelector("b").textContent = c.name;
+  b.addEventListener("click", () => open(i)); grid.appendChild(b);
+});
+function stop() { if (audio) { audio.pause(); audio = null; } }
+function play(src) { if (muted) return; stop(); audio = new Audio(src); audio.play().catch(() => {}); }
+function open(i) {
+  started = true; cur = (i + CAST.length) % CAST.length; const c = CAST[cur];
+  $("#cimg").src = IMG + c.img + ".webp"; $("#cimg").alt = c.name; $("#cpic").classList.toggle("night", c.id === "mother-night");
+  $("#cname").textContent = c.name; $("#ctext").textContent = c.text; $("#cfam").textContent = c.fam; $("#cfind").textContent = c.find;
+  $("#own").style.display = c.snd ? "" : "none";
+  const v = $("#veil"); v.classList.add("on"); const card = $("#card"); card.style.animation = "none"; void card.offsetWidth; card.style.animation = ""; card.scrollTop = 0;
+  play(SND + c.id + ".mp3");
+}
+function close() { stop(); $("#veil").classList.remove("on"); cur = -1; }
+$("#tell").addEventListener("click", () => { const m = muted; if (m) setMute(false); play(SND + CAST[cur].id + ".mp3"); });
+$("#own").addEventListener("click", () => { if (muted) setMute(false); play(OWN + CAST[cur].snd + ".mp3"); });
+$("#prev").addEventListener("click", () => open(cur - 1));
+$("#next").addEventListener("click", () => open(cur + 1));
+$("#shut").addEventListener("click", close);
+$("#veil").addEventListener("pointerdown", (e) => { if (e.target.id === "veil") close(); });
+addEventListener("keydown", (e) => { if (cur < 0) return; if (e.key === "Escape") close(); else if (e.key === "ArrowRight") open(cur + 1); else if (e.key === "ArrowLeft") open(cur - 1); });
+function setMute(m) { muted = m; if (m) stop(); $("#m-on").style.display = m ? "none" : ""; $("#m-off").style.display = m ? "" : "none"; $("#mute").setAttribute("aria-pressed", m); $("#mute").setAttribute("aria-label", m ? "Sound off" : "Sound on"); }
+$("#mute").addEventListener("click", () => setMute(!muted));
+$("#home").addEventListener("click", () => { stop(); location.assign("/nest/"); });
+addEventListener("pagehide", stop);
+})();
+</script>
+</body>
+</html>
