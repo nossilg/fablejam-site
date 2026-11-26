@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Catch the Berries · Fable Jam Nest</title>
+<meta name="description" content="Jet catches berries and star leaves under the plane tree. A play-corner game with no ads, no sign-ups and nothing collected.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#8cc866">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
+:root{--ink:#2b1f1e;--cream:#fbf3e4;--paper:#fffbf2;--teal:#3aa89a;--red:#d7352a;--gold:#f0b21c;--pink:#e8457a;--green:#4fae3a;--orange:#f08a24;--grass:#8cc866}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--grass);color:var(--ink);font-family:"Andika",system-ui,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;background:#8cc866}
+.fx{position:absolute;pointer-events:none;will-change:transform,opacity}
+.star{width:30px;height:30px;background:#ffe27a;clip-path:polygon(50% 0,62% 36%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,38% 36%);opacity:.95}
+#bubble{position:absolute;left:0;top:0;display:none;align-items:center;gap:10px;padding:8px 24px 8px 16px;background:#fff;border:6px solid var(--ink);border-radius:60px;font-size:50px;line-height:1;color:var(--ink);white-space:nowrap;pointer-events:none;z-index:4}
+#bubble::after{content:"";position:absolute;left:44px;bottom:-30px;border:20px solid transparent;border-top:28px solid var(--ink);border-bottom:0}
+#bubble svg{width:48px;height:48px;flex:none}
+/* portrait: stage on top, grass panel with buttons below */
+body.land #gate{right:calc(max(10px,env(safe-area-inset-right)) + 152px);top:calc(max(10px,env(safe-area-inset-top)) + 9px)}
+body.portrait #home{right:auto;top:auto;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #mute{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #gate{top:auto;right:auto;left:50%;margin-left:-66px;bottom:max(16px,env(safe-area-inset-bottom))}
+body.portrait #panel{display:block}
+#panel{display:none;position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#a6d676,#7dbb58);border-top:6px solid var(--ink)}
+/* top buttons */
+.round{position:absolute;z-index:6;width:64px;height:64px;border-radius:50%;border:5px solid var(--ink);background:var(--paper);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 5px 0 var(--ink);touch-action:none}
+.round svg{width:60%;height:60%}
+.round:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+#home{right:calc(max(10px,env(safe-area-inset-right)) + 76px);top:max(10px,env(safe-area-inset-top))}
+#mute{right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top))}
+#gate{position:absolute;z-index:6;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 78px);width:132px;height:46px;border-radius:23px;border:3px solid var(--ink);background:rgba(255,251,242,.92);font:700 12px/1.1 "Andika",sans-serif;color:var(--ink);padding:0 8px;overflow:hidden;cursor:pointer;touch-action:none;text-align:center}
+#gate i{position:absolute;left:0;top:0;bottom:0;width:0;background:#9ad7cf}
+#gate span{position:relative}
+#curtain{position:absolute;inset:0;background:#fffbf2;opacity:0;pointer-events:none;transition:opacity .4s;z-index:20}
+@media (prefers-reduced-motion:reduce){.big.lit{animation:none;outline:6px solid #fff}*{transition:none !important}}
+#world{position:absolute;left:0;top:0;width:1600px;height:893px;transform-origin:0 0}
+#world img.bg{position:absolute;left:0;top:0;width:1600px;height:893px;display:block;pointer-events:none;transform-origin:1300px 800px}
+.lay{position:absolute;left:0;top:0;width:0;height:0}
+.act{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
+img.it{position:absolute;max-width:none;pointer-events:none;will-change:transform}
+.fx.star{left:-15px;top:-15px}
+#basket{position:absolute;left:875px;top:258px;width:170px;height:96px;pointer-events:none}
+#tray{position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:7px;padding:9px 14px;background:rgba(255,251,242,.85);border:4px solid var(--ink);border-radius:30px}
+#tray i{display:block;width:clamp(15px,5vw,26px);height:clamp(15px,5vw,26px);border-radius:50%;border:3px solid var(--ink);background:rgba(43,31,30,.12)}
+#tray i.r{background:#e0453a}#tray i.b{background:#4a7fd8}#tray i.l{background:#6cbf3c;border-radius:50% 0 50% 0}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><div id="world">
+    <img class="bg" id="bg" src="img/bg.webp" alt="" draggable="false">
+    <div class="lay" id="L-items"></div>
+    <img id="basket" src="img/basket.svg" alt="" draggable="false">
+    <div class="lay" id="L-fx"></div>
+    <div id="bubble"></div>
+  </div></div>
+  <div id="panel"><div id="tray" aria-hidden="true"></div></div>
+  <button class="round" id="home" aria-label="Back to the play corner"><svg viewBox="0 0 40 40"><path d="M5 20 20 6l15 14" fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v15h20V19" fill="#f0b21c" stroke="#2b1f1e" stroke-width="4" stroke-linejoin="round"/></svg></button>
+  <button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
+  <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to go back to the Fable Jam Nest page."><i></i><span>Grown-ups: press and hold to leave</span></button>
+  <div id="curtain"></div>
+</div>
+<script>
+(() => {
+"use strict";
+const Q = new URLSearchParams(location.search);       // only used for the ?demo= screenshot helper
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const WW = 1600, WH = 893, IMG = "img/";
+const BX = 960, BASE = 350, RIM = 276;               // the basket on the long branch
+const GROUND = [640, 770];                           // where things land on the grass (item centre)
+const $ = (s) => document.querySelector(s);
+const world = $("#world"), body = document.body;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const eio = (u) => u * u * (3 - 2 * u);
+const eout = (u) => 1 - (1 - u) * (1 - u);
+
+// ---------- sound: made in code, soft, only after the first tap ----------
+let ax = null, master = null, muted = false;
+// a quiet loop of Mike's Thank You, Tree! instrumental (Suno, ours), from the first tap
+const MUSIC = new Audio("snd/tree-loop.mp3"); MUSIC.loop = true; MUSIC.preload = "auto"; MUSIC.volume = 0.2;
+function music() { if (muted) MUSIC.pause(); else if (MUSIC.paused) MUSIC.play().catch(() => {}); }
+function audioStart() {
+  music();
+  if (!ax) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; ax = new C(); master = ax.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ax.destination); }
+  if (ax.state === "suspended") ax.resume();
+}
+function tone(f, t0, d, v, f2, type = "sine") {
+  if (!ax) return; const t = ax.currentTime + t0, o = ax.createOscillator(), g = ax.createGain(); o.type = type;
+  o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d * .8);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(master); o.start(t); o.stop(t + d + .05);
+}
+let nbuf = null;
+function noise(t0, d, v, type, f1, f2, q = 1) {
+  if (!ax) return; if (!nbuf) { nbuf = ax.createBuffer(1, ax.sampleRate * 2, ax.sampleRate); const a = nbuf.getChannelData(0); for (let i = 0; i < a.length; i++) a[i] = Math.random() * 2 - 1; }
+  const t = ax.currentTime + t0, s = ax.createBufferSource(); s.buffer = nbuf; const f = ax.createBiquadFilter(); f.type = type; f.Q.value = q;
+  f.frequency.setValueAtTime(f1, t); f.frequency.exponentialRampToValueAtTime(f2, t + d);
+  const g = ax.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + d * .3); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  s.connect(f).connect(g).connect(master); s.start(t, Math.random()); s.stop(t + d + .05);
+}
+const PENT = [1047, 1175, 1319, 1568, 1760, 2093];
+const snd = {
+  plink(n = 0) { const f = PENT[n % PENT.length]; tone(f, 0, .2, .15); tone(f * 2, 0, .12, .05); },
+  bloop() { tone(420, 0, .12, .1, 640); },
+  tada() { tone(523, 0, .1, .1, null, "triangle"); tone(659, .09, .1, .1, null, "triangle"); tone(784, .18, .4, .11, null, "triangle"); tone(1047, .18, .4, .06); },
+  rustle() { noise(0, .9, .13, "highpass", 3000, 6500, .5); noise(.25, .6, .09, "bandpass", 2200, 4200, .6); },
+  pop() { tone(500, 0, .09, .14, 1100); },
+};
+// Jet's voice (recorded for this game). A missing file just stays quiet.
+const VOICE = {};
+for (const w of ["jet-yummy", "jet-thankyou"]) { const a = new Audio(`snd/${w}.mp3`); a.preload = "auto"; a.addEventListener("error", () => { a.dataset.bad = "1"; }); VOICE[w] = a; }
+function say(w) { const a = VOICE[w]; if (!a || muted || a.dataset.bad) return; try { a.currentTime = 0; a.volume = .9; a.play().catch(() => {}); } catch (e) {} }
+let quiet = false;   // demo screenshots make no sound
+const S = (n, ...a) => { if (!quiet) snd[n](...a); };
+
+// ---------- scene ----------
+const LI = $("#L-items"), LF = $("#L-fx");
+const bg = $("#bg"), bubble = $("#bubble");
+const mk = (src, w, h, layer) => { const im = document.createElement("img"); im.src = IMG + src; im.draggable = false; im.alt = ""; im.className = "it"; im.style.width = w + "px"; im.style.height = h + "px"; im.style.left = -w / 2 + "px"; im.style.top = -h / 2 + "px"; (layer || LI).appendChild(im); return im; };
+const SZ = { r: [56, 64, "berry-red.svg"], b: [56, 64, "berry-blue.svg"], l1: [44, 52, "p-leaf1.webp"], l2: [46, 46, "p-leaf2.webp"] };
+const KINDS = ["r", "b", "r", "b", "l1", "l2"];
+// Jet: her standing pose (looking up, headphones round her neck) with a hover bob; her "oh!" pose for happy moments. No flying pose exists.
+const jet = { x: 800, y: 520, tx: 800, ty: 520, flip: 1, vx: 0, el: null, a: null, b: null, t: 0 };
+{ const box = document.createElement("div"); box.className = "act"; LI.appendChild(box); jet.el = box;
+  const mkj = (n, w, h) => { const im = document.createElement("img"); im.src = IMG + n + ".webp"; im.draggable = false; im.alt = ""; im.style.cssText = `position:absolute;width:${w}px;height:${h}px;left:${-w / 2}px;top:${-h * .55}px`; box.appendChild(im); return im; };
+  jet.a = mkj("jet-up", 150, 176); jet.b = mkj("jet-oh", 155, 168); jet.b.style.display = "none"; }
+let happyUntil = 0;
+function jetPose() { const h = clock < happyUntil; jet.a.style.display = h ? "none" : "block"; jet.b.style.display = h ? "block" : "none"; }
+
+let clock = 0, items = [], pile = [], count = 0, parts = [], spawnT = 1.5, celeb = null, treeAmp = 0, treeT = 0, sprite = null;
+let view = { x0: 400, x1: 1200, y0: 100, y1: 800 };
+const branchY = (x) => x < 700 ? 395 : 375;
+function spawnAt(x, y, kind, st = "grow") {
+  const sz = SZ[kind], im = mk(sz[2], sz[0], sz[1]);
+  const it = { el: im, kind, st, t: 0, x, y, bx: x, ph: rnd(0, 6.28), gy: rnd(GROUND[0], GROUND[1]), spd: kind[0] === "l" ? rnd(34, 46) : rnd(46, 66), amp: kind[0] === "l" ? rnd(34, 50) : rnd(12, 22), sc: 1, rot: 0, hx: 0, hy: 0 };
+  items.push(it); return it;
+}
+function spawn() {
+  const lo = Math.max(view.x0 + 70, 380), hi = Math.min(view.x1 - 70, 1060);
+  const x = rnd(lo, Math.max(lo + 1, hi));
+  spawnAt(x, branchY(x) + 10, pick(KINDS));
+}
+const slotXY = (i) => { const rows = [[-54, -18, 18, 54], [-36, 0, 36], [-18, 18], [0]]; let k = i; for (let r = 0; r < 4; r++) { if (k < rows[r].length) return [BX + rows[r][k], RIM - 4 - r * 27]; k -= rows[r].length; } return [BX, RIM - 90]; };
+
+function sparkle(x, y, n = 8, spread = 120) {
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("div"); d.className = "fx star"; const s = rnd(.7, 1.5); d.style.left = "-15px"; d.style.top = "-15px"; LF.appendChild(d);
+    const a = rnd(0, 6.28), v = rnd(.4, 1) * spread;
+    parts.push({ el: d, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, g: 120, r: rnd(0, 90), vr: rnd(-120, 120), age: 0, life: rnd(.8, 1.3), s });
+  }
+}
+function flutter(n) {
+  for (let i = 0; i < n; i++) {
+    const k = pick(["l1", "l2"]), sz = SZ[k], im = mk(sz[2], sz[0] * .8, sz[1] * .8, LF); im.className = "fx";
+    const x = rnd(Math.max(view.x0, 560), Math.min(view.x1, 1300)), y = rnd(40, 200);
+    parts.push({ el: im, x, y, vx: rnd(-30, 30), vy: rnd(10, 40), g: 4, r: rnd(0, 360), vr: rnd(-90, 90), age: -rnd(0, .8), life: rnd(2.2, 3.2), s: 1, sway: rnd(20, 40), ph: rnd(0, 6) });
+  }
+}
+function stepParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.age += dt;
+    if (p.age < 0) { p.el.style.opacity = 0; continue; }
+    p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+    const k = p.age / p.life, o = k > .6 ? 1 - (k - .6) / .4 : Math.min(1, p.age * 5);
+    const sw = p.sway ? Math.sin(p.age * 2.2 + p.ph) * p.sway : 0;
+    p.el.style.opacity = clamp(o);
+    p.el.style.transform = `translate(${(p.x + sw).toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${p.r.toFixed(1)}deg) scale(${p.s})`;
+    if (p.age >= p.life) { p.el.remove(); parts.splice(i, 1); }
+  }
+}
+
+// ---------- catching ----------
+function caught(it) {
+  it.st = "hop"; it.t = 0; it.x0 = it.x; it.y0 = it.y; it.slot = pile.length + hopping(); 
+  const [sx, sy] = slotXY(it.slot); it.px = sx; it.py = sy;
+  S("plink", it.slot); sparkle(it.x, it.y, 4, 60); happyUntil = clock + .6;
+}
+const hopping = () => items.filter((i) => i.st === "hop").length - 1;
+function jetNear(it) { return Math.abs(it.x - jet.x) < 100 && Math.abs(it.y - (jet.y - 10)) < 100; }
+
+function stepItems(dt) {
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i]; it.t += dt;
+    if (it.st === "grow") { it.sc = eout(clamp(it.t / .6)); it.x = it.bx; if (it.t >= .6) { it.st = "fall"; it.t = 0; } }
+    else if (it.st === "fall") {
+      it.y += it.spd * dt; it.x = it.bx + Math.sin(it.t * 1.5 + it.ph) * it.amp * (REDUCE ? .3 : 1);
+      it.rot = Math.sin(it.t * 1.5 + it.ph) * (it.kind[0] === "l" ? 28 : 8);
+      if (it.y >= it.gy) { it.y = it.gy; it.st = "land"; it.t = 0; it.lx = it.x; }
+    }
+    else if (it.st === "land") {            // soft landing in the grass: a little squish, a little roll, a rest
+      const u = clamp(it.t / .5); it.x = it.lx + 16 * eout(u); it.rot = (it.kind[0] === "l" ? 6 : 50) * eout(u);
+      it.sc = 1; it.sy = 1 - .22 * Math.sin(Math.min(1, it.t / .35) * Math.PI);
+      if (it.t > 1.4) { it.st = "rise"; it.t = 0; it.sy = 1; it.rx = it.x; it.ry = it.y; it.tx = rnd(Math.max(view.x0 + 70, 380), Math.min(view.x1 - 70, 1060)); it.ty = branchY(it.tx) + 10; it.dur = (it.ry - it.ty) / 110; }
+    }
+    else if (it.st === "rise") {            // floats back up to the branch to fall again
+      const u = clamp(it.t / it.dur); it.y = lerp(it.ry, it.ty, eio(u)); it.x = lerp(it.rx, it.tx, eio(u)) + Math.sin(it.t * 2 + it.ph) * 14 * (REDUCE ? .3 : 1);
+      it.rot = Math.sin(it.t * 2 + it.ph) * 14; it.sc = 1 - .25 * Math.sin(u * 3.14); it.sy = it.sc;
+      if (u >= 1) { it.st = "grow"; it.t = 0; it.bx = it.tx; it.sc = 0; it.sy = 1; it.rot = 0; }
+    }
+    else if (it.st === "hop") {
+      const u = clamp(it.t / .75), e = eio(u);
+      it.x = lerp(it.x0, it.px, e); it.y = lerp(it.y0, it.py, e) - 150 * 4 * u * (1 - u); it.rot = it.rot * (1 - u); it.sc = lerp(1, .8, u); it.sy = it.sc;
+      if (u >= 1) { items.splice(i, 1); it.x = it.px; it.y = it.py; it.rot = 0; pile.push(it); count = pile.length; S("bloop"); trayUpdate(); if (count >= 10) startCeleb(); }
+    }
+    if (it.st !== "hop" && !celeb && it.st !== "grow" && jetNear(it)) caught(it);
+    draw(it);
+  }
+  for (const p of pile) draw(p);
+}
+function draw(it) { it.el.style.transform = `translate(${it.x.toFixed(1)}px,${it.y.toFixed(1)}px) rotate(${(it.rot || 0).toFixed(1)}deg) scale(${(it.sc ?? 1).toFixed(3)},${((it.sy ?? it.sc) ?? 1).toFixed(3)})`; }
+
+// ---------- the celebration: sparkle, Jet's happy loop, "Yummy berries!", then "Thank you, tree!", the tree rustles and takes the pile back ----------
+function startCeleb() { celeb = { t: 0, bx: jet.x, by: Math.max(jet.y, 330), said: 0, emptied: false, pearl: Math.random() < .5 }; sparkle(BX, RIM - 20, 14, 160); S("tada"); say("jet-yummy"); }
+function stepCeleb(dt) {
+  const c = celeb; c.t += dt; const t = c.t;
+  happyUntil = clock + .3;
+  if (t < 1.6) {                                       // the loop
+    const u = REDUCE ? 0 : eio(clamp(t / 1.5)), th = u * Math.PI * 2, R = 105;
+    c.px = c.bx + R * Math.sin(th) * jet.flip; c.py = c.by - R + R * Math.cos(th); c.rot = th * 57.3 * jet.flip * -1 ;
+    if (REDUCE) { c.px = c.bx; c.py = c.by - 20 * Math.sin(t * 3); c.rot = 0; }
+    jet.x = c.px; jet.y = c.py; jet.rot = c.rot; jet.tx = c.px; jet.ty = c.py;
+  } else { jet.rot = 0; jet.x = jet.tx = c.bx; jet.y = jet.ty = c.by; }
+  if (t > .45 && !sprite) popFriend(c.pearl);
+  if (t >= 1.55 && !c.said) { c.said = 1; say("jet-thankyou"); showBubble(); }
+  if (t >= 1.75 && c.said === 1) { c.said = 2; treeAmp = REDUCE ? 0 : 1; treeT = 0; S("rustle"); flutter(REDUCE ? 3 : 8); }
+  if (t >= 2.0 && !c.emptied) {                        // the pile goes back into the tree
+    c.emptied = true; const list = pile.splice(0);
+    list.forEach((p, i) => { p.st = "up"; p.t = -i * .09; p.x0 = p.x; p.y0 = p.y; p.tx = rnd(780, 1150); p.ty = rnd(80, 190); flying.push(p); });
+    count = 0; trayUpdate();
+  }
+  if (t >= 4.6) { bubble.style.display = "none"; celeb = null; jet.rot = 0; spawnT = 1.2; }
+  if (bubble.style.display === "flex") placeBubble(clamp((t - 1.55) / .35));
+}
+const flying = [];
+function stepFlying(dt) {
+  for (let i = flying.length - 1; i >= 0; i--) {
+    const p = flying[i]; p.t += dt; if (p.t < 0) continue;
+    const u = clamp(p.t / 1.2), e = eio(u);
+    p.x = lerp(p.x0, p.tx, e); p.y = lerp(p.y0, p.ty, e) - 60 * 4 * u * (1 - u); p.rot = u * 200; p.sc = 1 - .6 * u; p.sy = p.sc; p.el.style.opacity = 1 - clamp((u - .6) / .4);
+    draw(p); if (u >= 1) { p.el.remove(); flying.splice(i, 1); sparkle(p.tx, p.ty, 2, 40); }
+  }
+}
+function popFriend(pearl) {                              // Pearl (or EJ) pops up from the bottom of the picture to wave
+  const w = pearl ? 220 : 150, h = pearl ? 186 : 135;
+  const im = mk(pearl ? "pearl-flap.webp" : "ej-wave.webp", w, h, LF); im.className = "fx"; im.style.top = "0";
+  sprite = { el: im, t: 0, h, x: clamp(1120, view.x0 + w * .6, view.x1 - w * .6), y: view.y1 };
+}
+function stepSprite(dt) {
+  const s = sprite; if (!s) return; s.t += dt;
+  const up = eout(clamp(s.t / .5)) - eio(clamp((s.t - 2.6) / .5));
+  const wob = Math.sin(s.t * 6) * 5;
+  s.el.style.transform = `translate(${s.x}px,${s.y - s.h * up * .96}px) rotate(${wob}deg)`;
+  s.el.style.marginLeft = -parseFloat(s.el.style.width) / 2 + "px";
+  if (s.t > 3.2) { s.el.remove(); sprite = null; if (celeb) celeb.t = Math.max(celeb.t, 0); }
+}
+function showBubble() { bubble.style.display = "flex"; bubble.innerHTML = `<svg viewBox="0 0 40 40"><path d="M20 3l4 10 10-3-5 9 9 5-10 2 1 10-9-6-9 6 1-10-10-2 9-5-5-9 10 3z" fill="#6cbf3c" stroke="#2b1f1e" stroke-width="2.5" stroke-linejoin="round"/><path d="M20 22v15" stroke="#2b1f1e" stroke-width="2.5"/></svg>Thank you, tree!`; }
+function placeBubble(u) {
+  const bw = bubble.offsetWidth || 400, x = clamp(jet.x, view.x0 + bw / 2 + 12, view.x1 - bw / 2 - 12), y = Math.max(jet.y - 120, 90);
+  bubble.style.transform = `translate(${x - bw / 2}px,${y - 70}px) scale(${eout(u) || .01})`;
+  bubble.style.transformOrigin = `${clamp(jet.x - (x - bw / 2), 30, bw - 30)}px 100%`;
+}
+
+// ---------- Jet ----------
+function stepJet(dt) {
+  jet.t += dt;
+  if (!celeb) {
+    const dx = jet.tx - jet.x, dy = jet.ty - jet.y, k = 1 - Math.exp(-dt * 3.4);
+    let mx = dx * k, my = dy * k; const m = 650 * dt, d = Math.hypot(mx, my); if (d > m) { mx *= m / d; my *= m / d; }
+    jet.x += mx; jet.y += my; jet.vx = dt ? mx / dt : 0;
+    if (dx > 14) jet.flip = 1; else if (dx < -14) jet.flip = -1;
+    jet.rot = clamp(jet.vx * .025, -12, 12) * jet.flip;
+  }
+  const bob = REDUCE ? 0 : Math.sin(jet.t * 3.2) * 7;
+  jet.el.style.transform = `translate(${jet.x.toFixed(1)}px,${(jet.y + bob).toFixed(1)}px) rotate(${(jet.rot || 0).toFixed(1)}deg) scale(${jet.flip},1)`;
+  jetPose();
+}
+function stepTree(dt) {
+  treeT += dt; treeAmp = Math.max(0, treeAmp - dt * .45);
+  bg.style.transform = treeAmp > 0 ? `rotate(${(Math.sin(treeT * 9) * .7 * treeAmp).toFixed(3)}deg)` : "";
+}
+
+// ---------- the little tray under the picture on a phone held upright ----------
+const tray = $("#tray");
+for (let i = 0; i < 10; i++) { const d = document.createElement("i"); tray.appendChild(d); }
+function trayUpdate() { [...tray.children].forEach((d, i) => { const p = pile[i]; d.className = p ? (p.kind === "r" ? "r" : p.kind === "b" ? "b" : "l") : ""; }); }
+
+// ---------- input: drag Jet, or tap where she should fly ----------
+const stage = $("#stage");
+function toWorld(e) { const r = stage.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top].map((v, i) => v / cam.s + (i ? cam.y0 : cam.x0)); }
+function aim(e) { const [x, y] = toWorld(e); jet.tx = clamp(x, view.x0 + 60, view.x1 - 60); jet.ty = clamp(y, 140, 790); }
+stage.addEventListener("pointerdown", (e) => { e.preventDefault(); try { stage.setPointerCapture(e.pointerId); } catch (_) {} down = true; audioStart(); if (!celeb) aim(e); });
+stage.addEventListener("pointermove", (e) => { if (down && !celeb) aim(e); });
+let down = false;
+for (const ev of ["pointerup", "pointercancel"]) stage.addEventListener(ev, () => { down = false; });
+for (const ev of ["pointerdown", "touchend", "click"]) document.addEventListener(ev, () => audioStart(), { passive: true });
+$("#mute").addEventListener("pointerdown", (e) => {
+  e.preventDefault(); muted = !muted; audioStart(); if (master) master.gain.value = muted ? 0 : .55; if (muted) { MUSIC.pause(); for (const k in VOICE) VOICE[k].pause(); }
+  $("#m-on").style.display = muted ? "none" : ""; $("#m-off").style.display = muted ? "" : "none"; $("#mute").setAttribute("aria-pressed", muted); $("#mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on");
+});
+$("#home").addEventListener("pointerdown", (e) => { e.preventDefault(); $("#curtain").style.opacity = 1; setTimeout(() => location.assign("/nest/play/"), 250); });
+// the grown-up gate: press and hold three seconds (goes to the grown-ups' page; nothing else leaves the play corner)
+(() => {
+  const g = $("#gate"), bar = g.querySelector("i"); let t0 = 0, raf = 0;
+  const tick = () => { const u = (performance.now() - t0) / 3000; bar.style.width = clamp(u) * 100 + "%"; if (u >= 1) { t0 = 0; location.assign("/nest/"); return; } raf = requestAnimationFrame(tick); };
+  const stop = () => { cancelAnimationFrame(raf); t0 = 0; bar.style.width = "0"; };
+  g.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); try { g.setPointerCapture(e.pointerId); } catch (_) {} t0 = performance.now(); tick(); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) g.addEventListener(ev, stop);
+  g.addEventListener("contextmenu", (e) => e.preventDefault());
+  g.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.shiftKey) location.assign("/nest/"); });
+})();
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+// ---------- camera: cover the picture on a wide screen; on a phone held upright, the picture on top and a tray below ----------
+let cam = { s: 1, x0: 0, y0: 0 };
+function layout() {
+  const vw = innerWidth, vh = innerHeight, land = vw / vh >= 1.15;
+  body.classList.toggle("land", land); body.classList.toggle("portrait", !land);
+  const panel = $("#panel"); let s, x0, y0, sw = vw, sh = vh;
+  if (land) { s = Math.max(vw / WW, vh / WH); x0 = (WW - vw / s) * .55; y0 = (WH - vh / s) * .5; stage.style.height = "100%"; panel.style.display = "none"; }
+  else { sh = Math.round(vh * .7); s = Math.max(sh / WH, vw / WW); x0 = 800 - vw / (2 * s); y0 = (WH - sh / s) * .5; stage.style.height = sh + "px"; panel.style.display = "block"; panel.style.top = sh + "px"; }
+  x0 = clamp(x0, 0, WW - sw / s); y0 = clamp(y0, 0, WH - sh / s);
+  cam = { s, x0, y0 }; world.style.transform = `scale(${s}) translate(${-x0}px,${-y0}px)`;
+  view = { x0, x1: x0 + sw / s, y0, y1: y0 + sh / s };
+  jet.tx = clamp(jet.tx, view.x0 + 60, view.x1 - 60); jet.x = clamp(jet.x, view.x0 + 60, view.x1 - 60);
+}
+addEventListener("resize", layout); addEventListener("orientationchange", layout);
+
+// ---------- frame loop ----------
+function step(dt) {
+  clock += dt;
+  if (!celeb) { spawnT -= dt; const live = items.filter((i) => i.st === "grow" || i.st === "fall").length; if (spawnT <= 0 && items.length < 4 && live < 3) { spawn(); spawnT = rnd(1.8, 2.8); } }
+  stepItems(dt); stepFlying(dt); if (celeb) stepCeleb(dt); stepJet(dt); stepSprite(dt); stepParts(dt); stepTree(dt);
+}
+let last = 0, frozen = false;
+function frame(ms) { const now = ms / 1000, dt = Math.min(.05, last ? now - last : .016); last = now; step(dt); if (!frozen) requestAnimationFrame(frame); }
+
+const pre = Promise.all(["berry-red.svg", "berry-blue.svg", "basket.svg", "jet-up.webp", "jet-oh.webp", "p-leaf1.webp", "p-leaf2.webp", "pearl-flap.webp", "ej-wave.webp", "bg.webp"].map((n) => new Promise((r) => { const im = new Image(); im.onload = im.onerror = r; im.src = IMG + n; })));
+pre.then(() => {
+  layout(); jet.x = jet.tx = clamp(780, view.x0 + 60, view.x1 - 60); jet.y = jet.ty = 520;
+  const d = Q.get("demo");
+  if (d) {   // screenshot helper: ?demo=idle | play | catch | party  &t=seconds  (add &run=1 to keep playing)
+    quiet = true; audioStart = () => {}; const T = parseFloat(Q.get("t") || "0"); if (d !== "live") spawnT = 99;
+    const mid = (view.x0 + view.x1) / 2, cx = clamp(mid, 450, 1000);
+    if (d === "play" || d === "catch" || d === "party") {
+      const lo = Math.max(view.x0 + 90, 400), hi = Math.min(view.x1 - 90, 1060), sp = (hi - lo) / 3;
+      [["r", 0, 480], ["l1", 1, 430], ["b", 2, 560], ["l2", 3, 400]].forEach(([k, i, y]) => { const it = spawnAt(lo + sp * i + 20, y, k, "fall"); it.bx = it.x; it.t = i; });
+      jet.x = jet.tx = clamp(cx + 40, view.x0 + 60, view.x1 - 60); jet.y = jet.ty = 640;
+      if (d !== "play") {
+        const n = d === "party" ? 9 : 5;
+        for (let i = 0; i < n; i++) { const it = spawnAt(0, 0, KINDS[i % 4], "x"); const [sx, sy] = slotXY(i); it.x = sx; it.y = sy; it.rot = 0; it.el.style.opacity = 1; items.pop(); pile.push(it); draw(it); }
+        count = n; trayUpdate();
+        const it = spawnAt(jet.x - 10, jet.y - 30, d === "party" ? "b" : "r", "fall"); it.bx = it.x; it.t = 0; it.amp = 0; it.spd = 0;
+      }
+    } else if (d === "idle") { spawn(); items[0].st = "fall"; items[0].t = 1; items[0].y += 30; }
+    for (let i = 0; i < T * 60; i++) step(1 / 60);
+    if (!Q.get("run")) frozen = true;
+  }
+  requestAnimationFrame(frame);
+  document.documentElement.dataset.ready = "1";
+});
+})();
+</script>
+</body>
+</html>
