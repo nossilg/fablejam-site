@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Launch the Airplanes · Fable Jam Nest</title>
+<meta name="description" content="Crumb launches toy gliders from the plane tree. Tap Ready, Set, Go! A play-corner game with no ads, no sign-ups and nothing collected.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#8cc866">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
+:root{--ink:#2b1f1e;--cream:#fbf3e4;--paper:#fffbf2;--teal:#3aa89a;--red:#d7352a;--gold:#f0b21c;--pink:#e8457a;--green:#4fae3a;--orange:#f08a24;--grass:#8cc866}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--grass);color:var(--ink);font-family:"Andika",system-ui,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;background:#9bd3f2}
+#world{position:absolute;left:0;top:0;width:2752px;height:1536px;transform-origin:0 0}
+#world img.bg{position:absolute;left:0;top:0;width:2752px;height:1536px;display:block;pointer-events:none}
+.lay{position:absolute;left:0;top:0;width:0;height:0}
+.act{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
+.act img{position:absolute;display:none;max-width:none;pointer-events:none}
+.fx{position:absolute;pointer-events:none;will-change:transform,opacity}
+.ring{border:7px solid rgba(255,255,255,.85);border-radius:50%}
+.drop{width:16px;height:16px;border-radius:50%;background:#d8f1ff;border:3px solid #7ab9e0}
+.star{width:30px;height:30px;background:#ffe27a;clip-path:polygon(50% 0,62% 36%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,38% 36%);opacity:.95}
+#bubble{position:absolute;left:0;top:0;display:none;align-items:center;gap:16px;padding:14px 34px 14px 22px;background:#fff;border:9px solid var(--ink);border-radius:80px;font-size:92px;line-height:1;color:var(--ink);white-space:nowrap;transform-origin:50% 100%;pointer-events:none}
+#bubble::after{content:"";position:absolute;left:44px;bottom:-44px;border:28px solid transparent;border-top:38px solid var(--ink);border-bottom:0}
+#bubble svg{width:84px;height:84px;flex:none}
+/* controls */
+#ctrl{position:absolute;display:flex;gap:clamp(10px,2.4vw,22px);z-index:5}
+.big{position:relative;flex:none;width:var(--bs);height:var(--bs);border-radius:50%;border:5px solid var(--ink);color:#fff;font:700 calc(var(--bs)*.2)/1 "Andika",sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;cursor:pointer;box-shadow:0 7px 0 var(--ink);transition:transform .12s,opacity .3s,filter .3s;touch-action:none;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.big svg{width:48%;height:48%;display:block}
+.big[data-step="0"]{background:#f2b81c;color:#4a2f00;text-shadow:none}
+.big[data-step="1"]{background:#f08a24}
+.big[data-step="2"]{background:#4fae3a}
+.big:disabled{opacity:.42;filter:grayscale(.7);cursor:default;box-shadow:0 3px 0 var(--ink);transform:translateY(3px)}
+.big.lit{animation:pulse 1.4s ease-in-out infinite}
+.big:active:not(:disabled){transform:translateY(5px);box-shadow:0 2px 0 var(--ink)}
+@keyframes pulse{50%{transform:scale(1.07)}}
+/* portrait: stage on top, grass panel with buttons below */
+body.portrait #ctrl{left:0;right:0;bottom:0;justify-content:center;align-items:center;--bs:clamp(84px,25vw,150px)}
+body.portrait #panel{display:block}
+#panel{display:none;position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#a6d676,#7dbb58);border-top:6px solid var(--ink)}
+body.land #ctrl{left:max(14px,env(safe-area-inset-left));top:50%;transform:translateY(-50%);flex-direction:column;--bs:clamp(68px,min(19vh,13vw),130px)}
+/* top buttons */
+.round{position:absolute;z-index:6;width:64px;height:64px;border-radius:50%;border:5px solid var(--ink);background:var(--paper);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 5px 0 var(--ink);touch-action:none}
+.round svg{width:60%;height:60%}
+.round:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+#home{right:calc(max(10px,env(safe-area-inset-right)) + 76px);top:max(10px,env(safe-area-inset-top))}
+#mute{right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top))}
+#gate{position:absolute;z-index:6;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 78px);width:132px;height:46px;border-radius:23px;border:3px solid var(--ink);background:rgba(255,251,242,.92);font:700 12px/1.1 "Andika",sans-serif;color:var(--ink);padding:0 8px;overflow:hidden;cursor:pointer;touch-action:none;text-align:center}
+#gate i{position:absolute;left:0;top:0;bottom:0;width:0;background:#9ad7cf}
+#gate span{position:relative}
+#curtain{position:absolute;inset:0;background:#fffbf2;opacity:0;pointer-events:none;transition:opacity .4s;z-index:20}
+@media (prefers-reduced-motion:reduce){.big.lit{animation:none;outline:6px solid #fff}*{transition:none !important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><div id="world">
+    <img class="bg" id="bg" src="img/bg.webp" alt="" draggable="false">
+    <div class="lay" id="L-back"></div>
+    <div class="lay" id="L-crumb"></div>
+    <div class="lay" id="L-plane"></div>
+    <div class="lay" id="L-front"></div>
+    <div id="bubble"></div>
+  </div></div>
+  <div id="panel"></div>
+  <button class="round" id="home" aria-label="Back to the play corner"><svg viewBox="0 0 40 40"><path d="M5 20 20 6l15 14" fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v15h20V19" fill="#f0b21c" stroke="#2b1f1e" stroke-width="4" stroke-linejoin="round"/></svg></button>
+  <button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
+  <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to go back to the Fable Jam Nest page."><i></i><span>Grown-ups: press and hold to leave</span></button>
+  <div id="ctrl">
+    <button class="big" data-step="0" aria-label="Ready"><svg viewBox="0 0 40 40"><path d="M6 24 34 8 26 34 20 26z" fill="#fff" stroke="#4a2f00" stroke-width="3" stroke-linejoin="round"/><path d="M20 26 34 8" stroke="#4a2f00" stroke-width="3"/></svg>Ready</button>
+    <button class="big" data-step="1" aria-label="Set"><svg viewBox="0 0 40 40"><path d="M8 28 20 16l12 12M8 18 20 6l12 12" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>Set</button>
+    <button class="big" data-step="2" aria-label="Go!"><svg viewBox="0 0 40 40"><path d="M10 5 34 20 10 35z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>Go!</button>
+  </div>
+  <div id="curtain"></div>
+</div>
+<script>
+(() => {
+"use strict";
+// ---------- setup ----------
+const Q = new URLSearchParams(location.search);       // only used for the ?demo= screenshot helper
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const WW = 2752, WH = 1536, IMG = "img/";
+const CX = 1130, FEET = 644, GROUND = 1085;           // Crumb stands on the branch top (y 632 at his feet), characters on the grass
+const COLS = ["", "-y", "-b"];
+const $ = (s) => document.querySelector(s);
+const world = $("#world"), body = document.body;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const eio = (u) => u * u * (3 - 2 * u);
+const eout = (u) => 1 - (1 - u) * (1 - u);
+const L2 = (p, q, u) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u)];
+const arcUp = (p, q, u, h) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u) - h * 4 * u * (1 - u)];
+
+// ---------- assets (all from this site; preloaded so it works offline once loaded) ----------
+const names = ["crumb-catch", "crumb-go", "crumb-watch", "bucky-sit", "bucky-leap", "bucky-wave", "ej-sleep", "ej-lookup", "ej-cheer", "jet-up", "jet-oh", "jet-idle", "p-leaf1", "p-leaf2", "p-leaf3", "p-leaf4"];
+for (const g of ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"]) for (const c of COLS) names.push("glider-" + g + c);
+for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle", "bucky-hold", "bucky-offer"]) for (const c of COLS) names.push(g + c);
+const nat = {};
+const loadAll = Promise.all(names.map((n) => new Promise((res) => {
+  const im = new Image(); im.onload = im.onerror = () => { nat[n] = { w: im.naturalWidth || 200, h: im.naturalHeight || 200 }; res(); }; im.src = IMG + n + ".webp";
+})));
+
+// an actor: one box in the world holding several poses (only one shown); anchor "b" = feet, "c" = centre
+function actor(layer, list, k, anchor) {
+  const box = document.createElement("div"); box.className = "act"; layer.appendChild(box);
+  const kids = {};
+  for (const n of list) {
+    const im = document.createElement("img"); im.src = IMG + n + ".webp"; im.draggable = false; im.alt = "";
+    const w = nat[n].w * k, h = nat[n].h * k;
+    im.style.width = w + "px"; im.style.height = h + "px"; im.style.left = -w / 2 + "px"; im.style.top = (anchor === "b" ? -h : -h / 2) + "px";
+    box.appendChild(im); kids[n] = im;
+  }
+  const a = { box, kids, cur: null, w: (n) => nat[n].w * k, h: (n) => nat[n].h * k,
+    show(n) { if (a.cur === n) return; if (a.cur) kids[a.cur].style.display = "none"; kids[n].style.display = "block"; a.cur = n; },
+    hide() { box.style.display = "none"; }, vis() { box.style.display = "block"; },
+    set(x, y, rot = 0, flip = 1, sx = 1, sy = sx) { box.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${rot.toFixed(2)}deg) scale(${(flip * sx).toFixed(3)},${sy.toFixed(3)})`; } };
+  return a;
+}
+function fxDiv(cls, x, y, w, h, layer) {
+  const d = document.createElement("div"); d.className = "fx " + cls; d.style.width = w + "px"; d.style.height = h + "px"; d.style.left = -w / 2 + "px"; d.style.top = -h / 2 + "px";
+  d.style.transform = `translate(${x}px,${y}px)`; (layer || LF).appendChild(d); temp.push(d); return d;
+}
+
+// ---------- sound: everything made in code, soft, only after the first tap ----------
+let ax = null, master = null, muted = false;
+function audioStart() {
+  if (!ax) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; ax = new C(); master = ax.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ax.destination); }
+  if (ax.state === "suspended") ax.resume();
+}
+function tone(f, t0, d, v, f2, type = "sine") {
+  if (!ax) return; const t = ax.currentTime + t0, o = ax.createOscillator(), g = ax.createGain(); o.type = type;
+  o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d * .8);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(master); o.start(t); o.stop(t + d + .05);
+}
+let nbuf = null;
+function noise(t0, d, v, type, f1, f2, q = 1) {
+  if (!ax) return; if (!nbuf) { nbuf = ax.createBuffer(1, ax.sampleRate * 2, ax.sampleRate); const a = nbuf.getChannelData(0); for (let i = 0; i < a.length; i++) a[i] = Math.random() * 2 - 1; }
+  const t = ax.currentTime + t0, s = ax.createBufferSource(); s.buffer = nbuf; const f = ax.createBiquadFilter(); f.type = type; f.Q.value = q;
+  f.frequency.setValueAtTime(f1, t); f.frequency.exponentialRampToValueAtTime(f2, t + d);
+  const g = ax.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + d * .3); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  s.connect(f).connect(g).connect(master); s.start(t, Math.random()); s.stop(t + d + .05);
+}
+const snd = {
+  plink() { tone(1568, 0, .18, .16); tone(3136, 0, .12, .05); },
+  ready() { tone(784, 0, .16, .15, null, "triangle"); tone(1175, .09, .2, .12, null, "triangle"); },
+  set() { tone(988, 0, .14, .15, null, "triangle"); tone(1319, .08, .18, .13, null, "triangle"); tone(988, .22, .14, .1, null, "triangle"); },
+  go() { tone(523, 0, .12, .14, null, "triangle"); tone(784, .08, .12, .14, null, "triangle"); tone(1047, .16, .3, .14, null, "triangle"); },
+  whoosh() { noise(0, .8, .22, "bandpass", 350, 1900, 1.2); },
+  boing(p = 1) { tone(260 * p, 0, .5, .2, 520 * p); tone(262 * p, .0, .5, .06, 780 * p, "triangle"); },
+  poof() { noise(0, .35, .3, "lowpass", 900, 200, .7); tone(180, 0, .2, .12, 90); },
+  splash() { noise(0, .55, .26, "bandpass", 2400, 700, .8); for (let i = 0; i < 3; i++) tone(700 + i * 260, .12 + i * .1, .12, .09, 1300 + i * 300); },
+  pop() { tone(500, 0, .09, .18, 1100); },
+  breeze() { noise(0, 1.1, .2, "bandpass", 500, 1500, .6); },
+  squeak() { tone(1300, 0, .09, .09, 2300); tone(1500, .12, .09, .08, 2600); },
+  wow() { tone(659, 0, .14, .12, null, "triangle"); tone(880, .1, .14, .12, null, "triangle"); },
+  fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, .32, .1, null, "triangle")); tone(1047, .5, .5, .1, null, "triangle"); tone(1319, .5, .5, .07, null, "triangle"); },
+  rustle() { noise(0, .3, .16, "highpass", 3000, 6000, .5); },
+};
+
+// ---------- timeline: cues (do once) and tweens (every frame while active) ----------
+const tl = { t: 0, cues: [], tweens: [], on: false };
+const cue = (t, fn) => tl.cues.push({ t, fn, done: false });
+const tween = (t0, d, fn) => tl.tweens.push({ t0, d, fn, done: false });
+let parts = [];            // particles
+let temp = [];             // elements to clear at the end of a round
+function step(dt) {
+  if (!tl.on) return;
+  tl.t += dt;
+  for (const c of tl.cues) if (!c.done && tl.t >= c.t) { c.done = true; c.fn(); }
+  for (const w of tl.tweens) if (!w.done && tl.t >= w.t0) { const u = clamp((tl.t - w.t0) / w.d); w.fn(u, dt); if (u >= 1) w.done = true; }
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.age += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+    const k = p.age / p.life, o = k > .6 ? 1 - (k - .6) / .4 : 1;
+    p.el.style.opacity = clamp(o); p.el.style.transform = `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${p.r.toFixed(1)}deg)`;
+    if (k >= 1) { p.el.remove(); parts.splice(i, 1); }
+  }
+}
+function spawn(el, x, y, vx, vy, g, vr, life) { LF.appendChild(el); parts.push({ el, x, y, vx, vy, g, r: rnd(0, 360), vr, age: 0, life }); }
+function leafBurst(x, y, n, power = 1) {
+  const m = REDUCE ? Math.ceil(n / 2) : n;
+  for (let i = 0; i < m; i++) {
+    const im = document.createElement("img"); im.src = IMG + "p-leaf" + pick([1, 2, 4]) + ".webp"; im.className = "fx"; im.draggable = false; const s = rnd(.45, .8);
+    im.style.width = nat["p-leaf1"].w * s + "px"; im.style.left = -nat["p-leaf1"].w * s / 2 + "px"; im.style.top = -nat["p-leaf1"].h * s / 2 + "px";
+    spawn(im, x + rnd(-40, 40), y - 30, rnd(-230, 230) * power, rnd(-620, -300) * power, 520, rnd(-300, 300), rnd(1.1, 1.6));
+  }
+}
+
+// ---------- the actors ----------
+const LB = $("#L-back"), LC = $("#L-crumb"), LP = $("#L-plane"), LF = $("#L-front"), bubble = $("#bubble");
+let crumb, planes = [], plane, colour = 0;
+const crumbNames = ["crumb-catch", "crumb-go", "crumb-watch"]; for (const g of ["crumb-ready", "crumb-set", "crumb-wiggle"]) for (const c of COLS) crumbNames.push(g + c);
+const GL = ["level", "climb", "dive", "bank", "inv1", "inv2", "stuck", "float"];
+let hopY = 0, rock = 0, crumbSquash = 1;
+function renderCrumb(now) {
+  const breathe = (!tl.on && !REDUCE) ? 1 + .012 * Math.sin(now * 2.6) : 1;
+  crumb.set(CX, FEET - hopY, rock, 1, 1, breathe * crumbSquash);
+}
+function buildActors() {
+  crumb = actor(LC, crumbNames, 1, "b"); crumb.show("crumb-catch");
+  for (const c of COLS) { const p = actor(LP, GL.map((g) => "glider-" + g + c), .6, "c"); p.hide(); planes.push(p); }
+  bubble.innerHTML = "";
+}
+let pv = null, flipState = false;
+const NOSE = { level: 0, climb: 27, dive: -34 };
+function planeSet(x, y, rot, flip, spr, sc = 1) { plane.show("glider-" + spr + COLS[colour]); plane.set(x, y, rot, flip ? -1 : 1, sc); }
+// move the plane along pos(u); heading follows the path (smoothed) unless o.rot or o.spr say otherwise
+function fly(t0, d, pos, o = {}) {
+  tween(t0, d, (u, dt) => {
+    const p = pos(u), a = pos(Math.min(1, u + .03)), b = pos(Math.max(0, u - .03));
+    const v = [a[0] - b[0], a[1] - b[1]];
+    if (!pv) pv = v.slice(); else { const k = 1 - Math.exp(-dt * 11); pv[0] += (v[0] - pv[0]) * k; pv[1] += (v[1] - pv[1]) * k; }
+    if (pv[0] < -10) flipState = true; else if (pv[0] > 10) flipState = false;
+    if (o.rot) { planeSet(p[0], p[1], o.rot(u), false, o.spr ? o.spr(u) : "level", o.sc ? o.sc(u) : 1); return; }
+    const elev = Math.atan2(-pv[1], Math.abs(pv[0])) * 180 / Math.PI;
+    let spr = "level"; if (elev > 40) spr = "climb"; else if (elev < -42) spr = "dive";
+    if (o.spr) spr = o.spr(u);
+    const base = o.spr ? 0 : NOSE[spr], r = elev - base;
+    planeSet(p[0], p[1], flipState ? r : -r, flipState, spr, o.sc ? o.sc(u) : 1);
+  });
+}
+const hold = (pos) => () => pos;     // stay put
+
+// ---------- flights (a short silly trick, then the landing starts from wherever it ended) ----------
+const FLIGHTS = {
+  loop(t, S) {
+    const R = 105, p1 = [S[0] + 140, S[1] + 40], q = [p1[0] + 90, p1[1]], E = [q[0] + 280, q[1] + 90];
+    fly(t, .7, (u) => L2(S, p1, eio(u)));
+    cue(t + .55, snd.whoosh);
+    fly(t + .7, 1.4, (u) => { const f = eio(u) * 2 * Math.PI; return [p1[0] + R * Math.sin(f) + 90 * u, p1[1] - R * (1 - Math.cos(f))]; }, { rot: (u) => -360 * eio(u) });
+    fly(t + 2.1, .9, (u) => L2(q, E, eio(u)));
+    return { t: t + 3, E };
+  },
+  barrel(t, S) {
+    const E = [S[0] + 470, S[1] + 100];
+    const seq = [[0, "level"], [.16, "bank"], [.3, "inv1"], [.46, "inv2"], [.62, "inv1"], [.76, "bank"], [.9, "level"]];
+    cue(t + .2, snd.whoosh);
+    fly(t, 2.6, (u) => [lerp(S[0], E[0], u), lerp(S[1], E[1], u) - 60 * Math.sin(u * Math.PI)], { rot: () => 0, spr: (u) => { let s = "level"; for (const [k, n] of seq) if (u >= k) s = n; return s; } });
+    return { t: t + 2.6, E };
+  },
+  wobble(t, S) {
+    const E = [S[0] + 480, S[1] + 140], A = REDUCE ? 20 : 70;
+    cue(t + .1, snd.whoosh);
+    fly(t, 2.8, (u) => [lerp(S[0], E[0], u), lerp(S[1], E[1], u) + A * Math.sin(u * Math.PI * 6) * Math.sin(Math.PI * u) ]);
+    for (let i = 0; i < 3; i++) cue(t + .4 + i * .9, () => tone(520, 0, .25, .06, 700, "triangle"));
+    return { t: t + 2.8, E };
+  },
+  zigzag(t, S) {
+    const P = [S, [S[0] + 110, S[1] - 110], [S[0] + 220, S[1] + 60], [S[0] + 340, S[1] - 110], [S[0] + 450, S[1] + 80], [S[0] + 540, S[1] - 20]];
+    const E = P[P.length - 1]; cue(t + .1, snd.whoosh);
+    fly(t, 2.7, (u) => { const k = u * (P.length - 1), i = Math.min(P.length - 2, Math.floor(k)); return L2(P[i], P[i + 1], eio(k - i)); });
+    P.slice(1, -1).forEach((_, i) => cue(t + .45 + i * .5, () => tone(900 + i * 150, 0, .12, .06, 1300 + i * 150, "triangle")));
+    return { t: t + 2.7, E };
+  },
+  glide(t, S) {
+    const C = [S[0] + 330, S[1] - 230], E = [S[0] + 560, S[1] + 90];
+    cue(t + .1, snd.whoosh);
+    fly(t, 3.4, (u) => { const e = u; return [(1 - e) * (1 - e) * S[0] + 2 * (1 - e) * e * C[0] + e * e * E[0], (1 - e) * (1 - e) * S[1] + 2 * (1 - e) * e * C[1] + e * e * E[1]]; }, { sc: (u) => 1 + .12 * Math.sin(u * Math.PI) });
+    return { t: t + 3.4, E };
+  },
+  boomerang(t, S) {
+    const p1 = [S[0] + 280, S[1] + 40], R = 115, Cc = [p1[0], p1[1] - R], top = [Cc[0], Cc[1] - R], E = [S[0] + 190, S[1] + 70];
+    cue(t + .1, snd.whoosh);
+    fly(t, .9, (u) => L2(S, p1, eio(u)));
+    fly(t + .9, 1.3, (u) => { const th = Math.PI / 2 - Math.PI * eio(u); return [Cc[0] + R * Math.cos(th), Cc[1] + R * Math.sin(th)]; });
+    fly(t + 2.2, .9, (u) => L2(top, E, eio(u)));
+    return { t: t + 3.1, E };
+  },
+};
+
+// ---------- landings (nothing breaks, nobody is hurt) ----------
+function hit(x, y, big) { const r = fxDiv("ring", x, y, 90, 90); tween(tl.t, .45, (u) => { r.style.transform = `translate(${x}px,${y}px) scale(${.4 + u * (big || 1.4)})`; r.style.opacity = (1 - u) * .8; }); }
+function popIn(a, x, y, t0, flip = 1, d = .35, k = 1) { a.vis(); tween(t0, d, (u) => { const s = eout(u); a.set(x, y + (1 - s) * 40, 0, flip, s * k, s * k); }); }
+const LAND = {
+  pile(t, E) {
+    const G = [pick([1330, 1400, 1470]), GROUND + 20];
+    fly(t, 1.1, (u) => arcUp(E, [G[0], G[1] - 190], eio(u * .6 + .4 * u * u) , 120));
+    cue(t + 1.1, () => { plane.show("glider-stuck" + COLS[colour]); plane.set(G[0], G[1] - plane.h("glider-stuck" + COLS[colour]) / 2 + 12); snd.poof(); leafBurst(G[0], G[1] - 10, 11); });
+    tween(t + 1.1, 1.5, (u) => { plane.show("glider-stuck" + COLS[colour]); plane.set(G[0], G[1] - plane.h("glider-stuck" + COLS[colour]) / 2 + 12, 5 * Math.sin(u * 22) * (1 - u) , 1); });
+    return t + 2.8;
+  },
+  pinball(t, E) {
+    const B = [[1528, 412], [1228, 368], [1557, 465]], G = [1500, GROUND - 30];
+    const pts = [E, ...B]; let tt = t; const dur = [.8, .75, .7];
+    for (let i = 0; i < 3; i++) { const a = pts[i], b = pts[i + 1], t0 = tt, d = dur[i]; fly(t0, d, (u) => arcUp(a, b, u, 30 + i * 10)); const bi = i; cue(t0 + d, () => { snd.boing(1 + bi * .22); hit(b[0], b[1], 1.8); }); tt += d; }
+    const last = B[2];
+    fly(tt, 1.2, (u) => { const p = arcUp(last, G, u, -60); return p; });
+    cue(tt + 1.2, () => { snd.plink(); hit(G[0], G[1] + 20, 1.2); });
+    return tt + 1.2 + .5;
+  },
+  jet(t, E) {
+    const J = [1290, GROUND + 30], jet = actor(LB, ["jet-up", "jet-oh", "jet-idle"], 1.15, "b"); temp.push(jet.box); jet.show("jet-up"); jet.hide();
+    const H = [J[0] - 12, J[1] - jet.h("jet-up") + 2];
+    cue(t, () => { snd.pop(); popIn(jet, J[0], J[1], tl.t, 1, .4); });
+    fly(t, 1.5, (u) => arcUp(E, [H[0], H[1] - 30], u, 80));
+    cue(t + 1.5, () => { snd.plink(); snd.boing(1.6); jet.show("jet-oh"); });
+    tween(t + 1.5, .5, (u) => { const s = 1 - .1 * Math.sin(u * Math.PI); jet.set(J[0], J[1], 0, 1, 1, s); const py = H[1] + 28 * (1 - s) * 10; planeSet(H[0], H[1] - 30 + (30 + (1 - s) * 90) , 12 * Math.sin(u * 6) * (1 - u) - 6 * u, false, "level"); });
+    cue(t + 2.0, () => { planeSet(H[0], H[1] - 5, -7, false, "level"); });
+    tween(t + 2.0, 1.6, (u) => { jet.set(J[0], J[1] - 18 * Math.abs(Math.sin(u * Math.PI * 2)) * (1 - u), 0, 1, 1, 1); planeSet(H[0], H[1] - 5 - 18 * Math.abs(Math.sin(u * Math.PI * 2)) * (1 - u), -7, false, "level"); });
+    return t + 3.5;
+  },
+  bucky(t, E) {
+    const B = [1640, GROUND + 25], bk = actor(LB, ["bucky-sit", "bucky-leap", "bucky-hold" + COLS[colour], "bucky-offer" + COLS[colour], "bucky-wave"], 1, "b"); temp.push(bk.box);
+    bk.show("bucky-sit"); bk.hide();
+    const C = [1600, 805];
+    cue(t + .1, () => { snd.pop(); popIn(bk, B[0], B[1], tl.t, -1, .35); });
+    fly(t, 1.6, (u) => arcUp(E, C, eio(u), 60));
+    cue(t + 1.05, () => { bk.show("bucky-leap"); snd.boing(1.5); });
+    tween(t + 1.05, .55, (u) => bk.set(B[0] - 20 * u, B[1] - 235 * Math.sin(u * Math.PI * .5) , 0, -1));
+    cue(t + 1.6, () => { plane.hide(); bk.show("bucky-hold" + COLS[colour]); snd.plink(); snd.wow(); });
+    tween(t + 1.6, .4, (u) => bk.set(B[0] - 20, B[1] - 235 * (1 - eio(u)), 0, 1));
+    tween(t + 2.0, 1.0, (u) => { const s = 1 + .04 * Math.sin(u * Math.PI * 4) * (1 - u); bk.set(B[0] - 20, B[1], 0, 1, 1, s); });
+    cue(t + 3.0, () => { bk.show("bucky-offer" + COLS[colour]); snd.squeak(); });
+    tween(t + 3.0, .5, (u) => bk.set(B[0] - 20 - 30 * eout(u), B[1], 0, -1));
+    return t + 4.2;
+  },
+  nest(t, E) {
+    const N = [1665, 335], nb = document.createElement("div");
+    nb.innerHTML = `<svg width="300" height="170" viewBox="0 0 300 170" style="position:absolute;left:-150px;top:-95px"><ellipse cx="150" cy="75" rx="138" ry="62" fill="#4a2c18"/><ellipse cx="150" cy="68" rx="112" ry="42" fill="#2e1a0e"/></svg>`;
+    const nf = document.createElement("div");
+    nf.innerHTML = `<svg width="300" height="170" viewBox="0 0 300 170" style="position:absolute;left:-150px;top:-95px"><g fill="none" stroke-linecap="round"><path d="M14 80Q150 190 286 80" stroke="#6e4524" stroke-width="30"/><path d="M20 78Q150 175 280 78" stroke="#a9733c" stroke-width="16"/><path d="M30 86Q150 178 270 86" stroke="#8a5a30" stroke-width="9"/><path d="M26 70Q80 120 150 128" stroke="#c28a4c" stroke-width="6"/><path d="M274 70Q220 120 150 128" stroke="#c28a4c" stroke-width="6"/><path d="M60 100Q120 150 200 132" stroke="#5a381d" stroke-width="7"/><path d="M40 90Q150 160 262 94" stroke="#d4a15e" stroke-width="4"/></g><path d="M50 60 38 40M250 62 266 42M80 40 70 22" stroke="#8a5a30" stroke-width="7" stroke-linecap="round"/></svg>`;
+    for (const d of [nb, nf]) { d.className = "fx"; d.style.transformOrigin = "150px 95px"; d.style.left = "0"; d.style.top = "0"; }
+    nb.style.transform = nf.style.transform = `translate(${N[0]}px,${N[1]}px) scale(0)`; nb.style.zIndex = 0;
+    LB.appendChild(nb); temp.push(nb); const ej = actor(LB, ["ej-sleep", "ej-lookup", "ej-cheer"], .85, "b"); temp.push(ej.box); ej.show("ej-sleep"); ej.hide();
+    // E.J.'s nest sits between the back of the nest, E.J. and the plane, and the nest front
+    LF.appendChild(nf); temp.push(nf);
+    const EJ = [N[0] - 40, N[1] + 28];
+    cue(t, () => { snd.pop(); });
+    tween(t, .45, (u) => { const s = eout(u); nb.style.transform = nf.style.transform = `translate(${N[0]}px,${N[1]}px) scale(${s})`; ej.vis(); ej.set(EJ[0], EJ[1] + (1 - s) * 40, 0, 1, s); });
+    fly(t, 1.7, (u) => arcUp(E, [N[0] + 25, N[1] - 5], eio(u), 110), { sc: (u) => 1 - .3 * eio(clamp((u - .8) * 5)) });
+    cue(t + .95, () => ej.show("ej-lookup"));
+    cue(t + 1.7, () => { ej.show("ej-cheer"); snd.plink(); snd.wow(); hit(N[0] + 20, N[1] - 30, 1.1); planeSet(N[0] + 25, N[1] - 5, -6, false, "level", .7); });
+    tween(t + 1.7, 1.2, (u) => { ej.set(EJ[0], EJ[1] - 22 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u), 0, 1); });
+    return t + 3.4;
+  },
+  splash(t, E) {
+    const W = [1570 + rnd(-40, 40), 1018];
+    fly(t, 1.35, (u) => arcUp(E, [W[0], W[1] - 40], eio(u * .7 + .3 * u * u), 100));
+    cue(t + 1.35, () => {
+      snd.splash(); for (let i = 0; i < 3; i++) { const r = fxDiv("ring", W[0], W[1] + 22, 150, 40); r.style.borderWidth = "5px"; tween(tl.t + i * .25, 1.3, (u) => { r.style.transform = `translate(${W[0]}px,${W[1] + 22}px) scale(${.5 + u * 1.7},${.5 + u * 1.7})`; r.style.opacity = (1 - u) * .85; }); }
+      for (let i = 0; i < (REDUCE ? 4 : 9); i++) { const d = document.createElement("div"); d.className = "fx drop"; d.style.left = d.style.top = "-8px"; spawn(d, W[0] + rnd(-30, 30), W[1] - 10, rnd(-190, 190), rnd(-520, -260), 1100, 0, .9); }
+    });
+    tween(t + 1.35, 2.3, (u) => { const bob = Math.sin(u * 14) * 7 * (1 - u * .3); planeSet(W[0] + 40 * u, W[1] - 20 + bob, 3 * Math.sin(u * 9), false, "float"); });
+    return t + 3.7;
+  },
+  stuck(t, E) {
+    const Q2 = [1490, 262], leaves = [];
+    fly(t, 1.2, (u) => arcUp(E, Q2, eio(u), 60));
+    const mk = (n, x, y, s, r) => { const im = document.createElement("img"); im.src = IMG + n + ".webp"; im.className = "fx"; im.draggable = false; im.style.width = nat[n].w * s + "px"; im.style.left = -nat[n].w * s / 2 + "px"; im.style.top = -nat[n].h * s / 2 + "px"; im.style.transform = "scale(0)"; LF.appendChild(im); temp.push(im); leaves.push({ im, x, y, s, r }); };
+    mk("p-leaf1", Q2[0] - 20, Q2[1] + 22, 1.1, -18); mk("p-leaf2", Q2[0] + 38, Q2[1] + 30, 1.0, 20); mk("p-leaf4", Q2[0] + 8, Q2[1] + 58, .95, 4); mk("p-leaf3", Q2[0] - 55, Q2[1] + 48, 1.0, -5);
+    const draw = (sw, grow) => leaves.forEach((l, i) => { l.im.style.transform = `translate(${l.x}px,${l.y}px) rotate(${l.r + sw * (i % 2 ? 1 : -1) * (1 + i * .15)}deg) scale(${grow})`; });
+    cue(t + 1.2, () => { snd.rustle(); planeSet(Q2[0], Q2[1], -22, false, "level"); });
+    tween(t + 1.2, .4, (u) => { draw(0, eout(u)); planeSet(Q2[0], Q2[1], -22 + 4 * Math.sin(u * 20), false, "level"); });
+    tween(t + 1.6, .8, (u) => { planeSet(Q2[0], Q2[1], -22, false, "level"); });
+    cue(t + 2.4, () => { snd.breeze(); });
+    tween(t + 2.4, 1.3, (u) => { draw(16 * Math.sin(u * 24) * Math.sin(u * Math.PI), 1); planeSet(Q2[0] + 3 * Math.sin(u * 30), Q2[1], -22 + 5 * Math.sin(u * 24) * Math.sin(u * Math.PI), false, "level"); });
+    cue(t + 2.9, () => { leafBurst(Q2[0], Q2[1] + 30, 6, .6); snd.rustle(); });
+    const F = [Q2[0] - 40, GROUND + 5];
+    fly(t + 3.2, 1.5, (u) => [Q2[0] + (F[0] - Q2[0]) * eio(u) + 70 * Math.sin(u * 9) * (1 - u), Q2[1] + (F[1] - Q2[1]) * (u * u * .5 + u * .5)], { rot: (u) => 22 * Math.cos(u * 9) * (1 - u), spr: () => "level" });
+    tween(t + 3.2, .3, (u) => draw(0, 1 - eio(u) * .0));
+    cue(t + 4.7, () => snd.plink());
+    return t + 5.2;
+  },
+  back(t, E) {
+    const P = [CX + 170, FEET - 175];
+    fly(t, 1.7, (u) => { const m = [E[0] - 40, E[1] - 140], a = lerp(1 - u, 0, 0); return [(1 - u) * (1 - u) * E[0] + 2 * (1 - u) * u * m[0] + u * u * P[0], (1 - u) * (1 - u) * E[1] + 2 * (1 - u) * u * m[1] + u * u * P[1]]; });
+    cue(t + 1.25, () => crumb.show("crumb-catch"));
+    cue(t + 1.7, () => { plane.hide(); snd.pop(); snd.plink(); crumb.show("crumb-ready" + COLS[colour]); hit(P[0], P[1], 1.2); });
+    tween(t + 1.7, .5, (u) => { crumbSquash = 1 - .06 * Math.sin(u * Math.PI); });
+    cue(t + 2.3, () => { crumbSquash = 1; });
+    return { t: t + 2.2, keepPose: true };
+  },
+};
+const LAND_NAMES = Object.keys(LAND);
+
+// ---------- Crumb's reaction + reset ----------
+function react(t, keepPose) {
+  const word = pick(["wow", "again"]);
+  cue(t, () => {
+    if (!keepPose) crumb.show("crumb-go");
+    snd.fanfare(); snd.wow();
+    bubble.innerHTML = (word === "wow"
+      ? `<svg viewBox="0 0 40 40"><path d="M20 2l5 12 13 1-10 9 3 13-11-7-11 7 3-13L2 15l13-1z" fill="#f0b21c" stroke="#2b1f1e" stroke-width="3" stroke-linejoin="round"/></svg>Wow!`
+      : `<svg viewBox="0 0 40 40"><path d="M31 12A13 13 0 1 0 33 24" fill="none" stroke="#4fae3a" stroke-width="6" stroke-linecap="round"/><path d="M33 3v12H21z" fill="#4fae3a"/></svg>Again!`);
+    bubble.style.display = "flex"; bubble.style.transform = `translate(${CX - 70}px,${FEET - 580}px) scale(.01)`;
+  });
+  tween(t, .4, (u) => { const s = eout(u); bubble.style.transform = `translate(${CX - 70}px,${FEET - 580}px) scale(${s})`; });
+  tween(t, 1.1, (u) => { hopY = REDUCE ? 14 * Math.abs(Math.sin(u * Math.PI * 2)) : 46 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u * .4); rock = 0; if (u >= 1) hopY = 0; });
+  cue(t + 2.2, () => { for (const e of temp) e.style.transition = "opacity .35s", e.style.opacity = 0; plane.hide(); bubble.style.display = "none"; });
+  cue(t + 2.6, reset);
+}
+function reset() {
+  for (const e of temp) e.remove(); temp = []; for (const p of parts) p.el.remove(); parts = [];
+  tl.on = false; tl.cues = []; tl.tweens = []; hopY = 0; rock = 0; crumbSquash = 1;
+  crumb.show("crumb-catch"); plane.hide(); pv = null; flipState = false;
+  state = 0; refresh();
+}
+
+// ---------- one round ----------
+function startRound(o = {}) {
+  tl.cues = []; tl.tweens = []; tl.t = 0; pv = null; flipState = false; hopY = 0;
+  planes.forEach((p) => p.hide()); plane = planes[colour]; plane.hide();
+  const fl = o.fl || pick(REDUCE ? ["glide"] : Object.keys(FLIGHTS));
+  let ld = o.ld || pick(LAND_NAMES.filter((n) => n !== lastLand));
+  lastLand = ld;
+  const B = o.instant ? 0 : .55;     // the wiggle before the throw
+  if (!o.instant) {
+    cue(0, () => { crumb.show("crumb-wiggle" + COLS[colour]); snd.go(); });
+    tween(0, B, (u) => { rock = -5 * Math.sin(u * Math.PI * 6) * (1 - u * .3); });
+    cue(B - .02, () => { rock = 0; });
+  }
+  // the throw: GO pose, the plane leaves the paw
+  const S = [CX + 262, FEET - 296];
+  cue(B, () => { crumb.show("crumb-go"); plane.vis(); planeSet(S[0], S[1], -8, false, "level"); snd.whoosh(); });
+  tween(B, .35, (u) => { planeSet(S[0], S[1], -8, false, "level", .7 + .3 * u); });
+  cue(B + .45, () => crumb.show("crumb-watch"));
+  const F = FLIGHTS[fl](B + .18, S);
+  const r = LAND[ld](F.t, F.E);
+  const tEnd = typeof r === "number" ? r : r.t, keep = typeof r === "object" && r.keepPose;
+  react(tEnd, keep);
+  tl.on = true; tl.fl = fl; tl.ld = ld;
+  if (o.instant) tl.t = 0;
+}
+let lastLand = "";
+
+// ---------- buttons / state ----------
+let state = 0;            // 0 = Ready is next, 1 = Set, 2 = Go, 3 = flying
+const btns = [...document.querySelectorAll(".big")];
+function refresh() { btns.forEach((b, i) => { const on = i === state; b.disabled = !on; b.classList.toggle("lit", on); }); }
+function press(i) {
+  if (i !== state) return;
+  audioStart();
+  if (i === 0) { colour = Math.floor(Math.random() * 3); snd.ready(); crumb.show("crumb-ready" + COLS[colour]); hopY = 0; bump(); state = 1; }
+  else if (i === 1) { snd.set(); crumb.show("crumb-set" + COLS[colour]); bump(); state = 2; }
+  else { state = 3; startRound(); }
+  refresh();
+}
+function bump() { tween0(.22, (u) => { hopY = 22 * Math.sin(u * Math.PI); }); }
+// small free-running tween used before a round starts
+const free = [];
+function tween0(d, fn) { free.push({ t: 0, d, fn }); }
+btns.forEach((b, i) => {
+  b.addEventListener("pointerdown", (e) => { e.preventDefault(); press(i); });
+  b.addEventListener("click", (e) => { if (e.detail === 0) press(i); });   // keyboard
+});
+for (const ev of ["pointerdown", "touchend", "click"]) document.addEventListener(ev, () => audioStart(), { passive: true });
+$("#mute").addEventListener("pointerdown", (e) => {
+  e.preventDefault(); audioStart(); muted = !muted; if (master) master.gain.value = muted ? 0 : .55;
+  $("#m-on").style.display = muted ? "none" : ""; $("#m-off").style.display = muted ? "" : "none"; $("#mute").setAttribute("aria-pressed", muted); $("#mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on");
+});
+$("#home").addEventListener("pointerdown", (e) => { e.preventDefault(); $("#curtain").style.opacity = 1; setTimeout(() => location.assign("/nest/play/"), 250); });
+// the grown-up gate: press and hold three seconds (goes to the grown-ups' page; nothing else leaves the play corner)
+(() => {
+  const g = $("#gate"), bar = g.querySelector("i"); let t0 = 0, raf = 0;
+  const tick = () => { const u = (performance.now() - t0) / 3000; bar.style.width = clamp(u) * 100 + "%"; if (u >= 1) { t0 = 0; location.assign("/nest/"); return; } raf = requestAnimationFrame(tick); };
+  const stop = () => { cancelAnimationFrame(raf); t0 = 0; bar.style.width = "0"; };
+  g.addEventListener("pointerdown", (e) => { e.preventDefault(); try { g.setPointerCapture(e.pointerId); } catch (_) {} t0 = performance.now(); tick(); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) g.addEventListener(ev, stop);
+  g.addEventListener("contextmenu", (e) => e.preventDefault());
+  g.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.shiftKey) location.assign("/nest/"); });
+})();
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+// ---------- camera: fit the action (x 880-1900, y 120-1130) in whatever screen this is ----------
+function layout() {
+  const vw = innerWidth, vh = innerHeight, land = vw / vh >= 1.15;
+  body.classList.toggle("land", land); body.classList.toggle("portrait", !land);
+  const stage = $("#stage"), panel = $("#panel");
+  let s, x0, y0, sw = vw, sh = vh;
+  if (land) {
+    const pad = Math.max(120, Math.min(190, vh * .3)) ;
+    s = Math.min((vw - pad) / 1100, vh / 1220);
+    s = Math.max(s, vw / WW);
+    x0 = 1390 - (pad + (vw - pad) / 2) / s; y0 = 650 - vh / (2 * s);
+    stage.style.height = "100%"; panel.style.display = "none";
+  } else {
+    const ctrlH = clamp(vh * .28, 170, 230);
+    s = vw / 1180; sh = Math.min(vh - ctrlH, WH * s);
+    x0 = 1390 - vw / (2 * s); y0 = 625 - sh / (2 * s);
+    stage.style.height = sh + "px"; panel.style.display = "block"; panel.style.top = sh + "px";
+    $("#ctrl").style.top = sh + "px"; $("#ctrl").style.bottom = "0";
+  }
+  x0 = clamp(x0, 0, WW - sw / s); y0 = clamp(y0, 0, WH - sh / s);
+  world.style.transform = `scale(${s}) translate(${-x0}px,${-y0}px)`;
+}
+addEventListener("resize", layout); addEventListener("orientationchange", layout);
+
+// ---------- frame loop ----------
+let last = 0, frozen = false;
+function frame(ms) {
+  const now = ms / 1000, dt = Math.min(.05, last ? now - last : .016); last = now;
+  for (let i = free.length - 1; i >= 0; i--) { const f = free[i]; f.t += dt; f.fn(clamp(f.t / f.d)); if (f.t >= f.d) { f.fn(1); hopY = 0; free.splice(i, 1); } }
+  step(dt); renderCrumb(now);
+  if (!frozen) requestAnimationFrame(frame);
+}
+
+loadAll.then(() => {
+  buildActors(); layout(); refresh(); plane = planes[0];
+  // screenshot helper: ?demo=ready|set|go  or  ?demo=1&fl=loop&ld=splash&c=y&t=3.2  (jumps straight to that moment; add &run=1 to keep playing)
+  const d = Q.get("demo");
+  if (d) {
+    colour = Math.max(0, COLS.indexOf(Q.get("c") ? "-" + Q.get("c") : ""));
+    audioStart = () => {};
+    if (d === "ready") { crumb.show("crumb-ready" + COLS[colour]); state = 1; refresh(); }
+    else if (d === "set") { crumb.show("crumb-set" + COLS[colour]); state = 2; refresh(); }
+    else {
+      state = 3; refresh();
+      startRound({ fl: Q.get("fl"), ld: Q.get("ld"), instant: true });
+      const T = parseFloat(Q.get("t") || "0"); for (let i = 0; i < T * 60; i++) step(1 / 60);
+      if (!Q.get("run")) frozen = true;
+    }
+  }
+  requestAnimationFrame(frame);
+  if (frozen) requestAnimationFrame(() => { renderCrumb(0); });
+  document.documentElement.dataset.ready = "1";
+});
+})();
+</script>
+</body>
+</html>
