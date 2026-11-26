@@ -207,6 +207,7 @@ const CAST = [
 ];
 const $ = (s) => document.querySelector(s);
 const IMG = "img/", SND = "snd/", OWN = "../play/soundboard/snd/";
+const V = "?v=2"; // bump when a clip is re-recorded, so browsers fetch the new one instead of a cached copy (Mike, 2026-11-26: Moe)
 let muted = false, started = false, cur = -1, audio = null;
 const grid = $("#grid");
 CAST.forEach((c, i) => {
@@ -222,11 +223,11 @@ function open(i) {
   $("#cname").textContent = c.name; $("#ctext").textContent = c.text; $("#cfam").textContent = c.fam; $("#cfind").textContent = c.find;
   $("#own").style.display = c.snd ? "" : "none";
   const v = $("#veil"); v.classList.add("on"); const card = $("#card"); card.style.animation = "none"; void card.offsetWidth; card.style.animation = ""; card.scrollTop = 0;
-  play(SND + c.id + ".mp3");
+  play(SND + c.id + ".mp3" + V);
 }
 function close() { stop(); $("#veil").classList.remove("on"); cur = -1; }
-$("#tell").addEventListener("click", () => { const m = muted; if (m) setMute(false); play(SND + CAST[cur].id + ".mp3"); });
-$("#own").addEventListener("click", () => { if (muted) setMute(false); play(OWN + CAST[cur].snd + ".mp3"); });
+$("#tell").addEventListener("click", () => { const m = muted; if (m) setMute(false); play(SND + CAST[cur].id + ".mp3" + V); });
+$("#own").addEventListener("click", () => { if (muted) setMute(false); play(OWN + CAST[cur].snd + ".mp3" + V); });
 $("#prev").addEventListener("click", () => open(cur - 1));
 $("#next").addEventListener("click", () => open(cur + 1));
 $("#shut").addEventListener("click", close);
