@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Jam Nest Sound Board · Fable Jam Nest</title>
+<meta name="description" content="Tap the friends in the Jam Nest to hear their sounds, and tap the record to start the jam. A play-corner game with no ads, no sign-ups and nothing collected.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#3a2415">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(/fonts/Andika-Bold.ttf) format("truetype")}
+:root{--ink:#2b1f1e;--paper:#fffbf2;--gold:#f0b21c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#3a2415;color:var(--ink);font-family:"Andika",system-ui,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;background:#2b1a10}
+#world{position:absolute;left:0;top:0;width:2752px;height:1536px;transform-origin:0 0}
+#world img.bg{position:absolute;left:0;top:0;width:2752px;height:1536px;display:block;pointer-events:none}
+.item{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none;will-change:transform}
+.item img{position:absolute;display:none;max-width:none;pointer-events:none}
+.item.gg img,.item.jet img{filter:drop-shadow(0 0 7px rgba(255,236,190,.75))}
+.hit{position:absolute;left:0;top:0;border-radius:50%;cursor:pointer;z-index:9000;touch-action:none;outline:none}
+.hit:focus-visible{box-shadow:0 0 0 8px rgba(255,255,255,.8)}
+.fx{position:absolute;left:0;top:0;pointer-events:none;will-change:transform,opacity}
+#disc{position:absolute;left:0;top:0;width:330px;height:72px;margin:-36px 0 0 -165px;border-radius:50%;pointer-events:none;opacity:0;background:conic-gradient(rgba(255,255,255,.28) 0 14deg,transparent 14deg 180deg,rgba(255,255,255,.28) 180deg 194deg,transparent 194deg 360deg);transition:opacity .4s}
+#disc.on{opacity:1;animation:spin 1.6s linear infinite}
+@keyframes spin{to{transform:translate(1867px,997px) rotate(360deg)}}
+/* HUD */
+.round{position:absolute;z-index:6;width:64px;height:64px;border-radius:50%;border:5px solid var(--ink);background:var(--paper);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 5px 0 var(--ink);touch-action:none}
+.round svg{width:60%;height:60%}
+.round:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+#mute{right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top))}
+#home{right:calc(max(10px,env(safe-area-inset-right)) + 76px);top:max(10px,env(safe-area-inset-top))}
+#gate{position:absolute;z-index:6;right:calc(max(10px,env(safe-area-inset-right)) + 152px);top:calc(max(10px,env(safe-area-inset-top)) + 9px);width:132px;height:46px;border-radius:23px;border:3px solid var(--ink);background:rgba(255,251,242,.94);font:700 12px/1.1 "Andika",sans-serif;color:var(--ink);padding:0 8px;overflow:hidden;cursor:pointer;touch-action:none;text-align:center}
+#gate i{position:absolute;left:0;top:0;bottom:0;width:0;background:#9ad7cf}
+#gate span{position:relative}
+/* portrait: scene on top, friend buttons below */
+#panel{display:none;position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#5a3a22,#3a2415);border-top:6px solid var(--ink);z-index:4}
+body.portrait #panel{display:block}
+#pads{position:absolute;left:0;right:0;top:0;bottom:120px;align-content:center;display:grid;grid-template-columns:repeat(5,var(--pad));justify-content:center;gap:16px 10px}
+.pad{width:var(--pad);height:var(--pad);border-radius:50%;border:4px solid var(--ink);background:var(--paper);padding:5px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--ink);cursor:pointer;touch-action:none}
+.pad img{max-width:100%;max-height:100%;pointer-events:none}
+.pad:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.pad.rec{grid-column:3;width:calc(var(--pad)*1.3);height:calc(var(--pad)*1.3);margin:2px calc(var(--pad)*-.15);background:#d7352a}
+.pad.rec svg{width:80%;height:80%}
+body.portrait #home{right:auto;top:auto;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #mute{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}
+body.portrait #gate{top:auto;right:auto;left:50%;margin-left:-66px;bottom:max(16px,env(safe-area-inset-bottom))}
+#curtain{position:absolute;inset:0;background:#fffbf2;opacity:0;pointer-events:none;transition:opacity .4s;z-index:20}
+@media (prefers-reduced-motion:reduce){#disc.on{animation:none}*{transition:none !important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><div id="world">
+    <img class="bg" src="img/bg.webp" alt="" draggable="false">
+    <div id="disc"></div>
+    <div id="items"></div>
+    <div id="hits"></div>
+  </div></div>
+  <div id="panel"><div id="pads"></div></div>
+  <button class="round" id="home" aria-label="Back to the play corner"><svg viewBox="0 0 40 40"><path d="M5 20 20 6l15 14" fill="none" stroke="#2b1f1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19v15h20V19" fill="#f0b21c" stroke="#2b1f1e" stroke-width="4" stroke-linejoin="round"/></svg></button>
+  <button class="round" id="mute" aria-label="Sound on" aria-pressed="false"><svg viewBox="0 0 40 40"><path d="M6 15h7l9-7v24l-9-7H6z" fill="#2b1f1e"/><g id="m-on" fill="none" stroke="#2b1f1e" stroke-width="4" stroke-linecap="round"><path d="M27 14q5 6 0 12"/><path d="M31 9q9 11 0 22"/></g><path id="m-off" d="M26 13l10 14M36 13 26 27" stroke="#d7352a" stroke-width="4.5" stroke-linecap="round" style="display:none"/></svg></button>
+  <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to go back to the Fable Jam Nest page."><i></i><span>Grown-ups: press and hold to leave</span></button>
+  <div id="curtain"></div>
+</div>
+<script>
+(() => {
+"use strict";
+const Q = new URLSearchParams(location.search);   // only for the ?demo= screenshot helper
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const WW = 2752, WH = 1536, IMG = "img/", SND = "snd/", BPM = 115, BEAT = 60 / BPM;
+const $ = (s) => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eio = (u) => u * u * (3 - 2 * u), eout = (u) => 1 - (1 - u) * (1 - u);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
+// ---------- the cast: where they stand (feet x, y in the 2752x1536 picture), how tall, which clip ----------
+// the clips are the kids' echoes cut from Mike's roll-call take (see snd/CLIPS.txt)
+const CAST = [
+  { id: "gg",    name: "Gee-Gee",     x: 560,  y: 1420, h: 310, poses: ["gg-idle", "gg-fly"],            clip: "think",  dance: "think"  },
+  { id: "pearl", name: "Pearl",       x: 790,  y: 1445, h: 330, poses: ["pearl-idle", "pearl-flap"],     clip: "coo",    dance: "flap"   },
+  { id: "pops",  name: "Pops",        x: 1085, y: 1475, h: 330, poses: ["pops-idle", "pops-wave"],       clip: "pop",    dance: "pop"    },
+  { id: "dot",   name: "Dot",         x: 862,  y: 850,  h: 160, poses: ["dot-idle", "dot-cheer"],        clip: "tiptap", dance: "tiptap" },
+  { id: "crumb", name: "Crumb",       x: 1320, y: 1115, h: 300, poses: ["crumb-catch", "crumb-go"],      clip: "squeak", dance: "hop"    },
+  { id: "jet",   name: "Jet",         x: 1545, y: 1100, h: 280, poses: ["jet-idle", "jet-oh"],           clip: "plink",  dance: "plink"  },
+  { id: "jammo", name: "Jammo",       x: 2215, y: 1485, h: 290, poses: ["jammo-idle"],                   clip: "jingle", dance: "sway"   },
+  { id: "moe",   name: "Moe",         x: 2390, y: 1510, h: 470, poses: ["moe-idle", "moe-laugh"],        clip: "he",     dance: "laugh"  },
+  { id: "ej",    name: "E.J.",        x: 2462, y: 868,  h: 170, poses: ["ej-sit", "ej-wave", "ej-cheer"], clip: "peep",   dance: "wave"   },
+  { id: "moon",  name: "Little Moon", x: 1700, y: 735,  h: 400, poses: ["moon"], center: true,             clip: "shine",  dance: "shine"  },
+];
+const PAD_ORDER = ["gg", "jet", "crumb", "pearl", "moe", "pops", "jammo", "dot", "ej", "moon"];
+const REC = { x: 1650, y: 950, w: 460, h: 190 };          // the record player on the crate
+
+// ---------- assets ----------
+const imgNames = ["bg"]; for (const c of CAST) imgNames.push(...c.poses);
+const nat = {};
+const loaded = Promise.all(imgNames.map((n) => new Promise((res) => { const im = new Image(); im.onload = im.onerror = () => { nat[n] = { w: im.naturalWidth || 100, h: im.naturalHeight || 100 }; res(); }; im.src = IMG + n + ".webp"; })));
+
+// ---------- sound: short mp3 clips (a few copies of each so quick taps overlap); nothing starts before a tap ----------
+let muted = false, started = false;
+const CLIPS = {};
+function clip(name, copies) { const l = []; for (let i = 0; i < copies; i++) { const a = new Audio(SND + name + ".mp3"); a.preload = "auto"; l.push(a); } return { l, i: 0 }; }
+for (const c of CAST) CLIPS[c.clip] = clip(c.clip, 3);
+const CHORUS = new Audio(SND + "chorus.mp3"); CHORUS.preload = "auto";
+function playClip(name) {
+  if (muted) return; const c = CLIPS[name]; const a = c.l[c.i++ % c.l.length];
+  try { a.currentTime = 0; a.volume = .95; a.play().catch(() => {}); } catch (e) {}
+}
+
+// ---------- scene ----------
+const world = $("#world"), itemsEl = $("#items"), hitsEl = $("#hits"), disc = $("#disc");
+let clock = 0;                       // seconds; everything animates from this, so ?demo=...&t=... can jump to a moment
+const items = {};
+function build() {
+  for (const c of CAST) {
+    const box = document.createElement("div"); box.className = "item " + c.id; itemsEl.appendChild(box);
+    const kids = {};
+    c.poses.forEach((p) => {
+      const im = document.createElement("img"); im.src = IMG + p + ".webp"; im.alt = ""; im.draggable = false;
+      const w = nat[p].w * (c.h / nat[p].h), h = c.h;
+      im.style.width = w + "px"; im.style.height = h + "px"; im.style.left = -w / 2 + "px"; im.style.top = (c.center ? -h / 2 : -h) + "px";
+      box.appendChild(im); kids[p] = im;
+    });
+    box.style.zIndex = Math.round(c.y);
+    const it = { c, box, kids, cur: null, w: nat[c.poses[0]].w * (c.h / nat[c.poses[0]].h), anim: null, phase: Math.random() * 6 };
+    items[c.id] = it; show(it, c.poses[0]);
+    const hit = document.createElement("div"); hit.className = "hit"; hit.tabIndex = 0; hit.setAttribute("role", "button"); hit.setAttribute("aria-label", c.name);
+    hit.addEventListener("pointerdown", (e) => { e.preventDefault(); tap(c.id); });
+    hit.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(c.id); } });
+    hitsEl.appendChild(hit); it.hit = hit;
+  }
+  // E.J.'s nest: a back and a front, drawn in code, with E.J. between them
+  const nestSvg = (front) => `<svg width="300" height="170" viewBox="0 0 300 170" style="position:absolute;left:-150px;top:-100px">${front
+    ? `<g fill="none" stroke-linecap="round"><path d="M14 80Q150 190 286 80" stroke="#6e4524" stroke-width="30"/><path d="M20 78Q150 175 280 78" stroke="#a9733c" stroke-width="16"/><path d="M30 86Q150 178 270 86" stroke="#8a5a30" stroke-width="9"/><path d="M26 70Q80 120 150 128" stroke="#c28a4c" stroke-width="6"/><path d="M274 70Q220 120 150 128" stroke="#c28a4c" stroke-width="6"/><path d="M60 100Q120 150 200 132" stroke="#5a381d" stroke-width="7"/><path d="M40 90Q150 160 262 94" stroke="#d4a15e" stroke-width="4"/></g>`
+    : `<ellipse cx="150" cy="75" rx="138" ry="62" fill="#4a2c18"/><ellipse cx="150" cy="68" rx="112" ry="42" fill="#2e1a0e"/>`}</svg>`;
+  const ej = CAST.find((c) => c.id === "ej");
+  for (const front of [false, true]) { const d = document.createElement("div"); d.className = "item"; d.innerHTML = nestSvg(front); d.style.transform = `translate(${ej.x}px,${ej.y + 28}px)`; d.style.zIndex = Math.round(ej.y) + (front ? 2 : -1); itemsEl.appendChild(d); }
+  items.ej.base = 6;   // E.J. sits down in the nest a little
+  // the record player's tap area
+  const rh = document.createElement("div"); rh.className = "hit"; rh.tabIndex = 0; rh.setAttribute("role", "button"); rh.setAttribute("aria-label", "Record player: play the jam");
+  rh.addEventListener("pointerdown", (e) => { e.preventDefault(); record(); }); rh.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); record(); } });
+  hitsEl.appendChild(rh); items.rec = { hit: rh };
+  disc.style.transform = "translate(1867px,997px)";
+}
+function show(it, p) { if (it.cur === p) return; if (it.cur) it.kids[it.cur].style.display = "none"; it.kids[p].style.display = "block"; it.cur = p; }
+
+// ---------- effects: little pictures that live for a moment, drawn from the clock ----------
+let effects = [];
+function fx(cls, w, h, life, draw, css) {
+  const d = document.createElement("div"); d.className = "fx " + (cls || ""); d.style.width = w + "px"; d.style.height = h + "px"; d.style.marginLeft = -w / 2 + "px"; d.style.marginTop = -h / 2 + "px";
+  if (css) Object.assign(d.style, css); itemsEl.appendChild(d); d.style.zIndex = 8000;
+  const e = { d, t0: clock, life, draw }; effects.push(e); return e;
+}
+function ring(x, y, color, size = 90, life = .7) { fx("", size, size * .5, life, (u, d) => { d.style.transform = `translate(${x}px,${y}px) scale(${.5 + u * 2})`; d.style.opacity = (1 - u) * .8; }, { border: `6px solid ${color}`, borderRadius: "50%" }); }
+function dots(x, y, n, colors, spread, life, up = 1) {
+  for (let i = 0; i < n; i++) {
+    const ang = (i / n) * Math.PI * 2 + rnd(-.2, .2), r = spread * rnd(.7, 1.1), col = colors[i % colors.length];
+    fx("", 22, 22, life, (u, d) => { const k = eout(u); d.style.transform = `translate(${x + Math.cos(ang) * r * k}px,${y + Math.sin(ang) * r * k * .8 - 40 * up * k + 90 * u * u}px) scale(${1 - u * .5})`; d.style.opacity = u < .6 ? .95 : (1 - u) / .4 * .95; }, { background: col, borderRadius: "50%", border: "3px solid #2b1f1e" });
+  }
+}
+function note(x, y, ch, color, life = 1.1) { fx("", 60, 60, life, (u, d) => { d.style.transform = `translate(${x}px,${y - 140 * eout(u)}px) rotate(${Math.sin(u * 6) * 14}deg)`; d.style.opacity = u < .2 ? u / .2 : 1 - clamp((u - .6) / .4); }, { font: "700 64px Andika, sans-serif", color, textAlign: "center", lineHeight: "60px", textShadow: "0 3px 0 #2b1f1e, 0 -2px 0 #2b1f1e, 2px 0 0 #2b1f1e, -2px 0 0 #2b1f1e" }).d.textContent = ch; }
+
+// ---------- dances: each returns the pose + how to wobble the picture at time u (seconds since the tap) ----------
+const DUR = { think: 1.1, flap: 1.2, pop: 1.1, tiptap: 1.2, hop: 1, plink: 1.2, sway: 1.2, laugh: 1.3, wave: 1.1, shine: 1.8 };
+function dance(it, u) {
+  const c = it.c, P = c.poses;
+  let dy = 0, rot = 0, sx = 1, sy = 1, pose = P[0];
+  const hop = (t, a) => Math.abs(Math.sin(t * Math.PI)) * a;
+  switch (c.dance) {
+    case "think": pose = P[0]; rot = 7 * Math.sin(u * Math.PI * 4) * (1 - u / DUR.think); sy = 1 - .03 * Math.abs(Math.sin(u * Math.PI * 4)); break;
+    case "flap": pose = (Math.floor(u * 7) % 2) ? P[1] : P[0]; dy = -hop(u * 1.6, 26); break;
+    case "pop": pose = P[1]; dy = u < .45 ? -150 * Math.sin(u / .45 * Math.PI) : 0; sy = u < .45 ? 1.05 : 1 - .08 * Math.sin(clamp((u - .45) / .3) * Math.PI); break;
+    case "tiptap": pose = P[1]; rot = 10 * Math.sin(u * Math.PI * 5); dy = -hop(u * 5, 12); break;
+    case "hop": pose = P[1]; dy = -hop(u * 2, 34); sy = 1 + .04 * Math.sin(u * Math.PI * 4); break;
+    case "plink": pose = P[1]; dy = -hop(u * 2, 18); rot = -4 * Math.sin(u * Math.PI * 2); break;
+    case "sway": pose = P[0]; rot = 9 * Math.sin(u * Math.PI * 4) * (1 - u / DUR.sway * .6); break;
+    case "laugh": pose = P[1]; rot = 3.5 * Math.sin(u * 26) * (1 - u / DUR.laugh); dy = -hop(u * 3, 14); break;
+    case "wave": pose = u < .1 ? P[0] : (Math.floor(u * 6) % 2 ? P[1] : P[2]); dy = -hop(u * 2.5, 16); break;
+    case "shine": rot = REDUCE ? 0 : 360 * eio(clamp(u / 1.6)); { const k = Math.sin(clamp(u / 1.6) * Math.PI); sx = sy = 1 + .1 * k; it.glow = k; } break;
+  }
+  return { dy, rot, sx, sy, pose };
+}
+function tap(id) {
+  const it = items[id], c = it.c; startAudio(); playClip(c.clip);
+  it.anim = { t0: clock };
+  const x = c.x, top = c.center ? c.y - c.h / 2 : c.y - c.h;
+  switch (c.id) {
+    case "gg": for (let i = 0; i < 3; i++) fx("", 22 + i * 16, 22 + i * 16, 1.1, ((i) => (u, d) => { d.style.transform = `translate(${x + 40 + i * 30}px,${top - 30 - i * 44}px) scale(${clamp((u - i * .12) / .25)})`; d.style.opacity = 1 - clamp((u - .7) / .3); })(i), { background: "#fffbf2", border: "4px solid #2b1f1e", borderRadius: "50%" });
+      note(x + 100, top - 150, "?", "#fffbf2"); break;
+    case "jet": { const pb = fx("", 30, 22, .75, (u, d) => { const k = u * u; d.style.transform = `translate(${x + 70}px,${top + 40 + (c.y - top - 40) * k}px)`; d.style.opacity = u < .9 ? 1 : (1 - u) * 10; }, { background: "#aeb6bd", border: "4px solid #2b1f1e", borderRadius: "50%" }); setTimeout(() => {}, 0);
+      effects.push({ d: document.createElement("div"), t0: clock + .72, life: .01, draw() {}, after: () => ring(x + 70, c.y - 4, "#fff6d6", 70, .6) }); break; }
+    case "crumb": note(x + 90, top - 20, "♪", "#f6e7c1"); break;
+    case "pearl": dots(x, top + 60, 7, ["#fffbf2", "#f3d7e3", "#dff0ff"], 150, 1, 1); break;
+    case "moe": note(x - 80, top - 10, "ha", "#ffe27a"); note(x + 130, top + 30, "ha", "#ffe27a"); break;
+    case "pops": dots(x, c.y - 330, REDUCE ? 8 : 14, ["#ffd257", "#e8457a", "#3aa89a", "#6cbf3c", "#f08a24"], 190, 1.1); break;
+    case "jammo": note(x + 60, top + 40, "ting", "#ffe27a"); note(x - 70, top + 70, "ting", "#ffe27a"); break;
+    case "dot": note(x - 90, c.y - 160, "tip", "#fffbf2", .9); setTimeout(() => {}, 0); effects.push({ d: document.createElement("div"), t0: clock + .3, life: .01, draw() {}, after: () => note(x + 90, c.y - 160, "tap", "#fffbf2", .9) }); break;
+    case "ej": note(x - 70, top, "peep", "#fff2c2", 1); break;
+    case "moon": ring(x, c.y, "#fff1b8", 420, 1.5); setTimeout(() => {}, 0); effects.push({ d: document.createElement("div"), t0: clock + .5, life: .01, draw() {}, after: () => ring(x, c.y, "#fff1b8", 420, 1.3) }); break;
+  }
+}
+function record() {
+  startAudio(); if (muted) { beatStart = clock; beatUntil = clock + 8.4; disc.classList.add("on"); return; }
+  try { CHORUS.currentTime = 0; CHORUS.volume = .85; CHORUS.play().catch(() => {}); } catch (e) {}
+  beatStart = clock; beatUntil = clock + 8.4; disc.classList.add("on");
+}
+let beatStart = -1, beatUntil = -1;
+CHORUS.addEventListener("ended", () => { beatUntil = clock; });
+
+// ---------- frame loop ----------
+function render() {
+  const beating = clock < beatUntil;
+  if (!beating && disc.classList.contains("on") && !Q.get("demo")) disc.classList.remove("on");
+  for (const id in items) {
+    const it = items[id]; if (!it.c) continue; const c = it.c;
+    let dy = 0, rot = 0, sx = 1, sy = 1, pose = c.poses[0], glow = 0;
+    // a gentle breath so the Nest is alive; stops with reduced motion
+    if (!REDUCE) { const b = Math.sin(clock * 1.9 + it.phase); sy = 1 + .012 * b; if (c.center) { sx = sy = 1 + .015 * b; } }
+    if (it.anim) {
+      const u = clock - it.anim.t0;
+      if (u >= DUR[c.dance]) { it.anim = null; it.glow = 0; } else { const d = dance(it, u); dy += d.dy; rot += d.rot; sx *= d.sx; sy *= d.sy; pose = d.pose; glow = it.glow || 0; }
+    }
+    if (beating) {
+      const ph = ((clock - beatStart) / BEAT) % 1, k = Math.exp(-ph * 5), odd = Math.floor((clock - beatStart) / BEAT) % 2 ? 1 : -1;
+      const amp = REDUCE ? .4 : 1; dy -= 22 * k * amp * (c.center ? .3 : 1); sy *= 1 + .05 * k * amp; rot += odd * 3.2 * k * amp * (c.center ? 0 : 1);
+      glow = Math.max(glow, .35 + .25 * k);
+    }
+    show(it, pose);
+    const base = it.base || 0;
+    it.box.style.transform = `translate(${c.x}px,${c.y + base + dy}px) rotate(${rot.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`;
+    if (c.center) it.box.style.filter = `drop-shadow(0 0 ${6 + glow * 40}px rgba(255,240,170,${.35 + glow * .55}))`;
+  }
+  for (let i = effects.length - 1; i >= 0; i--) {
+    const e = effects[i], u = (clock - e.t0) / e.life;
+    if (u < 0) { if (e.d.parentNode) e.d.style.opacity = 0; continue; }
+    if (e.after) { e.after(); e.after = null; }
+    e.draw(clamp(u), e.d);
+    if (u >= 1) { e.d.remove(); effects.splice(i, 1); }
+  }
+}
+let last = 0, frozen = false;
+function frame(ms) { const now = ms / 1000, dt = Math.min(.05, last ? now - last : .016); last = now; clock += dt; render(); if (!frozen) requestAnimationFrame(frame); }
+
+// ---------- audio start / mute / home / gate ----------
+function startAudio() { started = true; }
+$("#mute").addEventListener("pointerdown", (e) => {
+  e.preventDefault(); muted = !muted; CHORUS.muted = muted;
+  $("#m-on").style.display = muted ? "none" : ""; $("#m-off").style.display = muted ? "" : "none"; $("#mute").setAttribute("aria-pressed", muted); $("#mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on");
+});
+$("#home").addEventListener("pointerdown", (e) => { e.preventDefault(); $("#curtain").style.opacity = 1; setTimeout(() => location.assign("/nest/play/"), 250); });
+(() => {
+  const g = $("#gate"), bar = g.querySelector("i"); let t0 = 0, raf = 0;
+  const tick = () => { const u = (performance.now() - t0) / 3000; bar.style.width = clamp(u) * 100 + "%"; if (u >= 1) { t0 = 0; location.assign("/nest/"); return; } raf = requestAnimationFrame(tick); };
+  const stop = () => { cancelAnimationFrame(raf); t0 = 0; bar.style.width = "0"; };
+  g.addEventListener("pointerdown", (e) => { e.preventDefault(); try { g.setPointerCapture(e.pointerId); } catch (_) {} t0 = performance.now(); tick(); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) g.addEventListener(ev, stop);
+  g.addEventListener("contextmenu", (e) => e.preventDefault());
+})();
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+// ---------- layout: whole picture on a landscape screen; on a phone held upright, the picture on top and a big button for every friend below ----------
+let S = 1;
+function layout() {
+  const vw = innerWidth, vh = innerHeight, land = vw / vh >= 1.15;
+  document.body.classList.toggle("land", land); document.body.classList.toggle("portrait", !land);
+  const stage = $("#stage"), panel = $("#panel"); let s, x0, y0, sh = vh;
+  if (land) {
+    s = Math.max(vw / WW, vh / WH); x0 = 1376 - vw / (2 * s); y0 = 768 - vh / (2 * s); stage.style.height = "100%";
+  } else {
+    const win = 2380; s = vw / win; sh = Math.min(vh - 330, 1330 * s); x0 = 1430 - win / 2; y0 = 1536 - sh / s - 20;
+    stage.style.height = sh + "px"; panel.style.top = sh + "px";
+    const pad = clamp((vw - 60) / 5 - 10, 58, 92); panel.style.setProperty("--pad", pad + "px");
+  }
+  x0 = clamp(x0, 0, WW - vw / s); y0 = clamp(y0, 0, WH - sh / s); S = s;
+  world.style.transform = `scale(${s}) translate(${-x0}px,${-y0}px)`;
+  // tap areas are never smaller than a thumb (64 px on the screen), whatever the picture's size
+  const minW = 72 / s;
+  for (const id in items) {
+    const it = items[id]; if (!it.c) continue; const c = it.c;
+    const w = Math.max(it.w * .8, minW), h = Math.max(c.h * .9, minW), cy = c.center ? c.y : c.y - c.h * .5;
+    Object.assign(it.hit.style, { width: w + "px", height: h + "px", transform: `translate(${c.x - w / 2}px,${cy - h / 2}px)` });
+  }
+  const rw = Math.max(REC.w, minW), rh = Math.max(REC.h, minW);
+  Object.assign(items.rec.hit.style, { width: rw + "px", height: rh + "px", transform: `translate(${REC.x + REC.w / 2 - rw / 2}px,${REC.y + REC.h / 2 - rh / 2}px)` });
+}
+addEventListener("resize", layout); addEventListener("orientationchange", layout);
+function buildPads() {
+  const pads = $("#pads");
+  for (const id of PAD_ORDER) {
+    const c = items[id].c, b = document.createElement("button"); b.className = "pad"; b.setAttribute("aria-label", c.name);
+    const im = document.createElement("img"); im.src = IMG + c.poses[0] + ".webp"; im.alt = ""; im.draggable = false; b.appendChild(im);
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); tap(id); }); pads.appendChild(b);
+  }
+  const r = document.createElement("button"); r.className = "pad rec"; r.setAttribute("aria-label", "Play the jam");
+  r.innerHTML = `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#2b1f1e"/><circle cx="20" cy="20" r="12" fill="none" stroke="#6b5444" stroke-width="1.5"/><circle cx="20" cy="20" r="6" fill="#f0b21c"/><circle cx="20" cy="20" r="1.5" fill="#2b1f1e"/></svg>`;
+  r.addEventListener("pointerdown", (e) => { e.preventDefault(); record(); }); pads.appendChild(r);
+}
+
+loaded.then(() => {
+  build(); buildPads(); layout();
+  // screenshot helper: ?demo=<id|all|beat>&t=<seconds after the tap>   (ids: gg jet crumb pearl moe pops jammo dot ej moon); add &run=1 to keep playing
+  const d = Q.get("demo");
+  if (d) {
+    const t = parseFloat(Q.get("t") || "0");
+    startAudio = () => {}; const noPlay = () => {}; CHORUS.play = () => Promise.resolve();
+    for (const k in CLIPS) CLIPS[k].l.forEach((a) => { a.play = () => Promise.resolve(); });
+    if (d === "all") PAD_ORDER.forEach((id) => tap(id)); else if (d === "beat") { record(); } else if (items[d]) tap(d);
+    const n = Math.round(t * 60); for (let i = 0; i < n; i++) { clock += 1 / 60; render(); }
+    render(); if (!Q.get("run")) frozen = true;
+  }
+  requestAnimationFrame(frame); document.documentElement.dataset.ready = "1";
+});
+})();
+</script>
+</body>
+</html>

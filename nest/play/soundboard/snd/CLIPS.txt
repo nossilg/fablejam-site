@@ -1,0 +1,13 @@
+Clips cut from songs/audio/fable-jam-a-jam-o-season-1-roll-call.mp3 (Mike's Suno take, Season 1 roll call).
+Each is the kids' echo after the lead line, trimmed at the silences (checked on the loudness envelope), 10 ms fade in, 50 ms fade out, normalised to a -3 dB peak, mono 64 kbps.
+think   38.60-39.42   "Think, think!" echo
+plink   55.60-56.55   "Plink, plink!" echo
+squeak  72.76-73.62   "Squeak, squeak!" echo
+coo     89.86-90.80   "Coo, coo!" echo
+he      122.98-123.68  the lead's "he, he" (the echo, 124.06-124.7, runs into "Biggest")
+pop     140.02-140.72  "POP! POP!" (bridge)
+jingle  153.86-154.58  "Jingle, jingle!" echo
+tiptap  171.47-172.80  "Tip, tap!" echo
+peep    187.40-188.30  "Peep, peep!" echo
+shine   205.44-206.82  "Shine, shine..." echo
+chorus  9.60-18.00     "Fable Jam-a-jam-O! Jam-O!" x2 hook, 0.4 s fade-out, -6 dB peak

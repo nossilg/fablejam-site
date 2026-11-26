@@ -20,12 +20,19 @@ body{background:#8cc866 url(airplanes/img/bg.webp) 38% 60%/cover no-repeat}
 body::before{content:"";position:fixed;inset:0;background:rgba(255,251,242,.35)}
 main{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2vmin;text-align:center}
 h1{margin:0;font-size:clamp(34px,8vmin,70px);line-height:1;color:var(--paper);-webkit-text-stroke:.12em var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 rgba(20,10,0,.25)}
-.go{position:relative;display:block;width:min(62vmin,340px);height:min(62vmin,340px);border-radius:50%;border:8px solid var(--ink);background:#f6e7c1;box-shadow:0 12px 0 var(--ink);text-decoration:none;color:var(--ink);overflow:hidden;animation:bob 2.4s ease-in-out infinite}
+.row{display:flex;gap:min(5vmin,40px);align-items:center;justify-content:center;flex-wrap:wrap}
+.go{position:relative;display:block;flex:none;width:min(40vmin,300px);height:min(40vmin,300px);border-radius:50%;border:8px solid var(--ink);background:#f6e7c1;box-shadow:0 12px 0 var(--ink);text-decoration:none;color:var(--ink);overflow:hidden;animation:bob 2.4s ease-in-out infinite}
 .go:active{transform:translateY(8px);box-shadow:0 4px 0 var(--ink)}
 .go img{position:absolute;pointer-events:none}
 .go .c{width:54%;left:14%;bottom:8%}
 .go .p{width:44%;right:8%;top:20%;transform:rotate(-12deg)}
 .go .w{position:absolute;left:0;right:0;top:8%;font-size:clamp(16px,4.4vmin,26px);padding:0 14%}
+body.portrait .go,.go{width:min(44vmin,300px);height:min(44vmin,300px)}
+.sb{background:#4a2c18}
+.sb .m{width:46%;left:27%;top:8%}
+.sb .j{width:34%;left:14%;bottom:7%}
+.sb .k{width:34%;right:12%;bottom:7%}
+.go.sb{animation-delay:-1.2s}
 @keyframes bob{50%{transform:translateY(-6px)}}
 #gate{position:fixed;z-index:6;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));width:150px;height:48px;border-radius:24px;border:3px solid var(--ink);background:rgba(255,251,242,.94);font:700 12px/1.1 "Andika",sans-serif;color:var(--ink);padding:0 10px;overflow:hidden;cursor:pointer;touch-action:none;text-align:center}
 #gate i{position:absolute;left:0;top:0;bottom:0;width:0;background:#9ad7cf}
@@ -44,10 +51,17 @@ h1{margin:0;font-size:clamp(34px,8vmin,70px);line-height:1;color:var(--paper);-w
 <body>
 <main>
   <h1>Play corner</h1>
+  <div class="row">
   <a class="go" href="/nest/play/airplanes/" aria-label="Launch the Airplanes">
     <img class="p" src="airplanes/img/glider-level-y.webp" alt="" draggable="false">
     <img class="c" src="airplanes/img/crumb-ready.webp" alt="" draggable="false">
   </a>
+  <a class="go sb" href="/nest/play/soundboard/" aria-label="Jam Nest Sound Board">
+    <img class="m" src="soundboard/img/moon.webp" alt="" draggable="false">
+    <img class="j" src="soundboard/img/jet-idle.webp" alt="" draggable="false">
+    <img class="k" src="soundboard/img/pearl-idle.webp" alt="" draggable="false">
+  </a>
+  </div>
 </main>
 <button id="gate" aria-label="Grown-ups only. Press and hold for three seconds to read a note for grown-ups."><i></i><span>Grown-ups: press and hold to read</span></button>
 <div id="note" role="dialog" aria-label="For grown-ups">
