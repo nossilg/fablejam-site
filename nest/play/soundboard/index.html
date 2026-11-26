@@ -93,6 +93,15 @@ body.portrait #ctl{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 62px)}
 #shelf h2 svg{width:28px;height:28px}
 #shelf section[data-kind="bedtime"]{margin-top:26px;padding:4px 14px 16px;border-radius:24px;background:linear-gradient(#1d2a5c,#2c3c7a);border:4px solid #f0b21c}
 #shelf section[data-kind="bedtime"] h2{color:#ffe7a3;font-size:22px}
+.cw{position:relative}
+.heart{position:absolute;left:6px;top:6px;z-index:2;width:42px;height:42px;padding:6px;border-radius:50%;border:3px solid #fffbf2;background:rgba(43,31,30,.78);color:transparent;cursor:pointer;touch-action:manipulation}
+.heart svg{width:100%;height:100%;display:block}.heart svg path{stroke:#fffbf2}
+.heart[aria-pressed=true]{background:#fffbf2;color:#e0453a}.heart[aria-pressed=true] svg path{stroke:#2b1f1e}
+#shelf section[data-kind="mix"]{padding:4px 14px 16px;border-radius:24px;border:4px dashed #f49ab0;background:rgba(224,69,58,.12)}
+#shelf section[data-kind="mix"] h2 svg{color:#e0453a}
+.playmix{margin-left:auto;font:700 17px/1 "Andika",sans-serif;padding:10px 18px;border-radius:999px;border:3px solid #2b1f1e;background:#3aa58e;color:#fff;cursor:pointer}
+.playmix:disabled{opacity:.4;cursor:default}
+.mixhint{margin:0 4px 6px;color:#f6e7c1;font:700 16px/1.3 "Andika",sans-serif;opacity:.85}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px}
 .card{display:block;border:0;background:none;padding:0;font:inherit;color:#fffbf2;cursor:pointer;text-align:center;touch-action:pan-y;animation:fan .5s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--i)*45ms)}
 .card .rec{position:relative;display:block;border-radius:14px;border:4px solid #fffbf2;box-shadow:0 6px 0 rgba(0,0,0,.55);overflow:hidden;background:#2b1f1e;aspect-ratio:16/9}
@@ -311,7 +320,8 @@ let shuffle = false, bag = []; // shuffle: every song once, in a random order, t
 let playing = false, bedMode = false, cur = -1, loopAll = false, demoT = null, shelfBuilt = false, lastLine = -2, lineSpans = [];
 const nowEl = $("#np"), lyrEl = nowEl.querySelector(".lyr"), lyrBar = $("#lyrbar");
 const starsEl = nowEl.querySelector(".stars"); for (let i = 0; i < 12; i++) starsEl.appendChild(document.createElement("b"));
-const queue = () => SONGS.map((x, i) => i).filter((i) => (SONGS[i].kind === "bedtime") === (SONGS[cur] ? SONGS[cur].kind === "bedtime" : shelfBed));
+let mix = [], mixMode = false; // "my mix": songs picked with a heart; while it plays, next/shuffle/play-them-all use only these (Mike, 2026-11-26). Kept only while the page is open: nothing is saved.
+const queue = () => (mixMode && mix.length) ? mix.slice() : SONGS.map((x, i) => i).filter((i) => (SONGS[i].kind === "bedtime") === (SONGS[cur] ? SONGS[cur].kind === "bedtime" : shelfBed));
 let shelfBed = false;
 let ac = null;
 function tick() {   // the needle's little "tick", made in code
@@ -322,6 +332,10 @@ function tick() {   // the needle's little "tick", made in code
 }
 function buildShelf() {
   if (shelfBuilt) return; shelfBuilt = true; const box = $("#shelfin");
+  const ms = document.createElement("section"); ms.dataset.kind = "mix";
+  ms.innerHTML = `<h2>${HEART_SVG}<span>My mix</span><button class="playmix" id="playmix" disabled aria-label="Play my mix">▶ Play my mix</button></h2><p class="mixhint">Tap the ♥ on any record to add it to your mix.</p><div class="grid" id="mixgrid"></div>`;
+  box.appendChild(ms);
+  ms.querySelector("#playmix").addEventListener("pointerdown", (e) => { e.preventDefault(); playMix(); });
   const groups = [["sing-along", "Sing along", '<svg viewBox="0 0 28 28"><path d="M10 22V6l12-3v16" fill="none" stroke="#f6e7c1" stroke-width="3" stroke-linejoin="round"/><circle cx="7" cy="22" r="4" fill="#f6e7c1"/><circle cx="19" cy="19" r="4" fill="#f6e7c1"/></svg>'], ["remix", "Remixes", '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#f6e7c1"/><circle cx="14" cy="14" r="4" fill="#d7352a"/></svg>'], ["bedtime", "Bedtime songs", '<svg viewBox="0 0 28 28"><path d="M19 3a11 11 0 1 0 6 16A9 9 0 0 1 19 3z" fill="#c9d2ff"/></svg>']];
   for (const [kind, name, ico] of groups) {
     const idx = SONGS.map((x, i) => i).filter((i) => SONGS[i].kind === kind); if (!idx.length) continue;
@@ -335,10 +349,35 @@ function buildShelf() {
       b.addEventListener("pointerup", (e) => { if (down && Math.hypot(e.clientX - sx, e.clientY - sy) < 12) { e.preventDefault(); play(i); } down = false; });
       b.addEventListener("pointercancel", () => { down = false; });
       b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); play(i); } });
-      grid.appendChild(b);
+      const w = document.createElement("div"); w.className = "cw"; w.appendChild(b);
+      const h = document.createElement("button"); h.className = "heart"; h.dataset.i = i; h.setAttribute("aria-pressed", "false"); h.setAttribute("aria-label", "Add " + SONGS[i].title + " to my mix"); h.innerHTML = HEART_SVG;
+      h.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); toggleMix(i); });
+      h.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMix(i); } });
+      w.appendChild(h); grid.appendChild(w);
     });
     box.appendChild(sec);
   }
+}
+const HEART_SVG = '<svg viewBox="0 0 28 28"><path d="M14 24S3 17 3 10a5.5 5.5 0 0 1 11-1 5.5 5.5 0 0 1 11 1c0 7-11 14-11 14z" fill="currentColor" stroke="#2b1f1e" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+function toggleMix(i) {
+  const k = mix.indexOf(i); if (k >= 0) mix.splice(k, 1); else mix.push(i); bag = []; tick(); renderMix();
+}
+function startMixLoop() { mixMode = true; bag = []; if (!loopAll) { loopAll = true; $("#loop").setAttribute("aria-pressed", true); } }
+function playMix() { if (!mix.length) return; startMixLoop(); play(shuffle ? mix[Math.floor(Math.random() * mix.length)] : mix[0], true); }
+function renderMix() {
+  document.querySelectorAll("#shelfin .heart").forEach((h) => { const on = mix.includes(+h.dataset.i); h.setAttribute("aria-pressed", on); h.setAttribute("aria-label", (on ? "Take " : "Add ") + SONGS[+h.dataset.i].title + (on ? " out of my mix" : " to my mix")); });
+  const g = $("#mixgrid"); if (!g) return; g.textContent = "";
+  mix.forEach((i, n) => {
+    const b = document.createElement("button"); b.className = "card"; b.style.setProperty("--i", n); b.dataset.i = i; b.setAttribute("aria-label", "Play " + SONGS[i].title + " from my mix");
+    b.innerHTML = `<span class="rec"><img alt="" draggable="false" src="${SONGS[i].cover}"></span><span class="t"></span>`; b.querySelector(".t").textContent = SONGS[i].title;
+    let sx = 0, sy = 0, down = false;
+    b.addEventListener("pointerdown", (e) => { sx = e.clientX; sy = e.clientY; down = true; });
+    b.addEventListener("pointerup", (e) => { if (down && Math.hypot(e.clientX - sx, e.clientY - sy) < 12) { e.preventDefault(); startMixLoop(); play(i, true); } down = false; });
+    b.addEventListener("pointercancel", () => { down = false; });
+    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startMixLoop(); play(i, true); } });
+    g.appendChild(b);
+  });
+  $("#playmix").disabled = !mix.length; document.querySelector(".mixhint").style.display = mix.length ? "none" : "";
 }
 function showShelfGroup() {
   for (const sec of $("#shelfin").children) sec.style.display = "";
@@ -351,7 +390,8 @@ function openCrate(bed) { if (!SONGS.length) return; startAudio(); buildShelf();
 function closeCrate() { $("#shelf").classList.remove("on"); }
 $("#shut").addEventListener("pointerdown", (e) => { e.preventDefault(); closeCrate(); });
 $("#moonbtn").addEventListener("pointerdown", (e) => { e.preventDefault(); shelfBed = true; showShelfGroup(); });
-function play(i) {
+function play(i, keepMix) {
+  if (!keepMix) mixMode = false;
   const s = SONGS[i]; if (!s) return; startAudio(); cur = i; lastSong = i; paused = false; bedMode = s.kind === "bedtime"; playing = true; document.body.classList.add("hasplayed"); ppIcon();
   BEAT = 60 / (bedMode ? 60 : clamp(s.bpm || 100, 60, 160)); beatStart = clock;
   closeCrate(); tick();
@@ -376,15 +416,15 @@ function stop() {
 function ppIcon() { const on = playing; $("#pp-pause").style.display = on ? "" : "none"; $("#pp-play").style.display = on ? "none" : ""; $("#pp").setAttribute("aria-label", on ? "Pause" : "Play"); }
 function pauseSong() { if (!playing) return; try { MUSIC.pause(); } catch (e) {} playing = false; paused = true; nowEl.classList.remove("spin"); beatUntil = clock; ppIcon(); }
 function resumeSong() { if (!paused || cur < 0) return; const pr = MUSIC.play(); if (pr && pr.catch) pr.catch(() => {}); playing = true; paused = false; beatStart = clock; nowEl.classList.toggle("spin", !REDUCE); ppIcon(); }
-$("#pp").addEventListener("pointerdown", (e) => { e.preventDefault(); startAudio(); if (playing) pauseSong(); else if (paused) resumeSong(); else { const q = queue(); play(lastSong >= 0 ? lastSong : q[0]); } });
+$("#pp").addEventListener("pointerdown", (e) => { e.preventDefault(); startAudio(); if (playing) pauseSong(); else if (paused) resumeSong(); else { const q = queue(); play(lastSong >= 0 ? lastSong : q[0], true); } });
 function nextSong() {
   const q = queue(); if (!q.length) return stop();
   if (shuffle && q.length > 1) {
     bag = bag.filter((i) => q.includes(i) && i !== cur);
     if (!bag.length) bag = q.filter((i) => i !== cur);
-    const n = bag.splice(Math.floor(Math.random() * bag.length), 1)[0]; return play(n);
+    const n = bag.splice(Math.floor(Math.random() * bag.length), 1)[0]; return play(n, true);
   }
-  const n = q[(q.indexOf(cur) + 1) % q.length]; play(n);
+  const n = q[(q.indexOf(cur) + 1) % q.length]; play(n, true);
 }
 MUSIC.addEventListener("ended", () => { if (loopAll) nextSong(); else stop(); });
 $("#stop").addEventListener("pointerdown", (e) => { e.preventDefault(); stop(); });
