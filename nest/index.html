@@ -37,9 +37,6 @@ h1{margin:0 0 6px;font-size:clamp(40px,8vw,76px);line-height:1;color:var(--paper
 @keyframes bop{50%{transform:translateY(-6px) scaleY(.98)}}
 .hop img{animation:hop .45s ease-out !important}
 @keyframes hop{40%{transform:translateY(-38px) rotate(-4deg)}100%{transform:none}}
-.jar{position:relative;width:clamp(90px,16vw,120px);height:clamp(120px,21vw,160px);border:5px solid var(--ink);border-top-width:0;border-radius:0 0 30px 30px;background:rgba(255,255,255,.55);overflow:hidden}
-.jar::before{content:"";position:absolute;left:-10px;right:-10px;top:0;height:14px;background:#c58b52;border:5px solid var(--ink);border-radius:8px}
-.jar .p{position:absolute;width:20px;height:16px;border-radius:50%;border:3px solid var(--ink);transition:top .5s cubic-bezier(.5,0,.9,1)}
 .hint{font-size:18px;color:#6b5444;margin:14px 0 0}
 .peb{margin-top:16px;font:700 22px "Andika",sans-serif;padding:10px 26px;border-radius:999px;border:4px solid var(--ink);background:var(--teal);color:#fff;cursor:pointer;box-shadow:0 5px 0 var(--ink)}
 .peb:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
@@ -97,14 +94,6 @@ footer{margin:34px 0 10px;font-size:15px;color:#6b5444}
   <div class="soon">Season 1 starts Thanksgiving!</div>
   <p class="tag">Fables in song and story, with Jet the DJ crow and Crumb the little mouse. Stories, sing-alongs and remixes for kids aged 3 to 12.</p>
 
-  <div class="stage">
-    <button id="jet" aria-label="Jet: tap to hear her plink"><img src="/img/jet.webp" alt="Jet, a little crow with teal headphones round her neck"></button>
-    <div class="jar" aria-hidden="true"></div>
-    <button id="crumb" aria-label="Crumb: tap to hear him squeak"><img src="/img/crumb.webp" alt="Crumb, a little mouse with a green neckerchief"></button>
-  </div>
-  <button class="peb" id="drop">Drop the pebble</button>
-  <p class="hint">Tap Jet and Crumb, too.</p>
-
   <section class="puzzle" aria-labelledby="ptl">
   <h2 id="ptl">The play corner</h2>
 <!-- puzzle:start -->
@@ -161,29 +150,10 @@ footer{margin:34px 0 10px;font-size:15px;color:#6b5444}
 // the string lights twinkle across the top of the Jam Nest
 const L = document.querySelector(".lights"), C = ["#ffd257", "#e8457a", "#3aa89a", "#6cbf3c", "#ffd257", "#e8457a"];
 for (let i = 0; i < 14; i++) { const b = document.createElement("i"); b.style.left = (3 + i * 7) + "%"; b.style.top = (18 + 10 * Math.sin(i * 0.9)) + "px"; b.style.color = C[i % C.length]; b.style.animationDelay = (i * 0.37 % 2.4) + "s"; L.appendChild(b); }
-// sounds, made right here (no files): Jet's plink is a pebble on a record, Crumb's squeak a quick little chirp
+// sounds, made right here (no files): the puzzle's soft click
 let ax;
 const ctx = () => ax || (ax = new (window.AudioContext || window.webkitAudioContext)());
 function tone(f, t0, d, v, f2) { const a = ctx(), o = a.createOscillator(), g = a.createGain(); o.frequency.setValueAtTime(f, a.currentTime + t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, a.currentTime + t0 + d * .6); g.gain.setValueAtTime(v, a.currentTime + t0); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + t0 + d); o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + d + .05); }
-const plink = () => { tone(1568, 0, .18, .18); tone(3136, 0, .12, .07); };
-const squeak = () => { tone(1300, 0, .09, .08, 2300); tone(1500, .12, .09, .07, 2600); };
-function hop(el) { el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop"); }
-// the Word Jar: each pebble drops in and settles on the pile (kept only on this page, nothing is saved)
-const jar = document.querySelector(".jar"), PC = ["#9aa3ad", "#c7b8a2", "#8a7f74", "#b9c3c9", "#a99a88"];
-let n = 0;
-function pebble() {
-  plink(); hop(document.getElementById("jet"));
-  const w = jar.clientWidth, h = jar.clientHeight, per = Math.max(3, Math.floor((w - 16) / 22)), row = Math.floor(n / per) % 6, col = n % per;
-  const p = document.createElement("span"); p.className = "p"; p.style.background = PC[n % PC.length];
-  p.style.left = (6 + col * ((w - 30) / Math.max(1, per - 1))) + "px"; p.style.top = "-20px"; jar.appendChild(p);
-  requestAnimationFrame(() => requestAnimationFrame(() => { p.style.top = (h - 24 - row * 15) + "px"; }));
-  n++; if (n % (per * 6) === 0) setTimeout(() => { jar.querySelectorAll(".p").forEach((q) => q.remove()); }, 700);
-}
-document.getElementById("drop").addEventListener("click", pebble);
-document.getElementById("jet").addEventListener("click", pebble);
-const crumb = document.getElementById("crumb"), ci = crumb.querySelector("img");
-crumb.addEventListener("click", () => { squeak(); hop(crumb); ci.src = "/img/crumb-cheer.webp"; clearTimeout(crumb._t); crumb._t = setTimeout(() => (ci.src = "/img/crumb.webp"), 900); });
-
 // the puzzle: a tap lifts the piece, clicks softly, snaps it flat, then goes to its game
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
 document.querySelectorAll("a.pc").forEach((a) => a.addEventListener("click", (e) => {
